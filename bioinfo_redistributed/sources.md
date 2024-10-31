@@ -1,8 +1,6 @@
-################################################################################
-Systems Maps
-################################################################################
+# Overview
 
-.. module:: pickle
+# Systems Maps
 
 This document describes the provenance of all systems maps used in the analysis.
 Where possible, links will be given.
