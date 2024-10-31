@@ -16,9 +16,8 @@ cansrmapp
         :alt: Documentation Status
 
 
-
-
-Mark please fill this out
+CanSRMaPP is a modeling tool for identifying a minimal feature set describing the
+metagenome of a cancer cohort.
 
 
 * Free software: BSD license
