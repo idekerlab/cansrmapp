@@ -21,20 +21,19 @@ metagenome of a cancer cohort.
 
 
 * Free software: BSD license
-* Documentation: https://cansrmapp.readthedocs.io.
 * Source code: https://github.com/idekerlab/cansrmapp
-
 
 
 Dependencies
 ------------
 
-* `cellmaps_utils <https://pypi.org/project/cellmaps-utils>`__
+see `requirements.txt`
+
 
 Compatibility
 -------------
 
-* Python 3.8+
+* Python 3.11+
 
 Installation
 ------------
