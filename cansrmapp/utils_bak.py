@@ -24,18 +24,17 @@ def word_to_seed(word) :
 
 def msg(*args,**kwargs) : 
     print(time.strftime("%m%d %H:%M:%S",time.localtime())+'|',*args,**kwargs)
-    time.sleep(0) # for issues with ipython interpreters
     sys.stdout.flush()
 
 def diag_embed(thetensor,minorly=False) :
 
     if not minorly :
-        use_indices=thetensor.indices()
-        outindices=torch.stack([use_indices[0],*use_indices],axis=0)
+        use_indices=thetensor.indices().cpu().numpy()
+        outindices=np.stack([use_indices[0],*use_indices],axis=0)
         outshape=(thetensor.shape[0],*tuple(thetensor.shape))
     else : 
-        use_indices=thetensor.indices()
-        outindices=torch.stack([*use_indices,use_indices[-1]],axis=0)
+        use_indices=thetensor.indices().cpu().numpy()
+        outindices=np.stack([*use_indices,use_indices[-1]],axis=0)
         outshape=(*tuple(thetensor.shape),thetensor.shape[-1],)
 
     return torch.sparse_coo_tensor(indices=outindices,values=thetensor.values(),size=outshape).coalesce()
@@ -130,36 +129,6 @@ def regularize_cc_torch(ccten,n,correlation_p=1e-3) :
     
     return out
 
-
-def ravel_multi_index(multi_index, dims):
-    """
-    Convert a tuple of tensor indices into a flat index, given the dimensions of the array.
-    
-    Parameters:
-    multi_index (tuple of torch.Tensor): Indices for each dimension.
-    dims (torch.Size or tuple): Shape of the tensor.
-    
-    Returns:
-    torch.Tensor: The flattened index.
-
-    Authored using ChatGPT 3.0
-    """
-    # Ensure dims is a tensor
-    if not isinstance(dims, torch.Tensor):
-        dims = torch.tensor(dims, dtype=torch.long)
-    
-    # Calculate strides
-    strides = torch.cumprod(dims.flip(0), 0).flip(0)
-    strides = torch.cat((strides.to(device=multi_index.device)[1:], torch.tensor([1],device=multi_index.device))).to(multi_index.device)
-    
-    # Convert multi_index to tensor if not already
-    if isinstance(multi_index, tuple):
-        multi_index = torch.stack(multi_index)
-    
-    # Compute the flat index
-    flat_index = torch.sum(multi_index * strides.unsqueeze(-1), dim=0)
-    return flat_index
-
 def cc2mats(m1,m2) :
     """
     This function finds the correlation coefficient between all **columns** of two matrices m1 and m2.
@@ -227,14 +196,14 @@ def flatten_majorly(thetensor) :
     Flattens sparse tensor thetensor maintaining the first (=0th) axis and flattening the remainder
     """
 
-    use_indices=thetensor.indices()
-    use_shape=_tcast(thetensor.shape)
+    use_indices=thetensor.indices().cpu().numpy()
+    use_shape=thetensor.shape
 
-    outsize=(use_shape[0],torch.prod(use_shape[1:]))
-    ri=ravel_multi_index(use_indices[1:],dims=use_shape[1:])
+    outsize=(use_shape[0],np.prod(use_shape[1:]))
+    ri=np.ravel_multi_index(use_indices[1:],dims=use_shape[1:])
     maj_i=use_indices[0]
 
-    outindices=torch.stack([maj_i,ri],axis=0)
+    outindices=np.stack([maj_i,ri],axis=0)
 
     return torch.sparse_coo_tensor(indices=outindices,values=thetensor.values(),size=outsize).coalesce()
 
@@ -243,14 +212,14 @@ def flatten_minorly(thetensor) :
     Flattens sparse tensor thetensor maintaining the last (-1th) axis and flattening the remainder
     """
 
-    use_indices=thetensor.indices()
-    use_shape=torch.tensor(thetensor.shape)
+    use_indices=thetensor.indices().cpu().numpy()
+    use_shape=thetensor.shape
 
-    outsize=(torch.prod(use_shape[:-1]),use_shape[-1])
-    ri=ravel_multi_index(use_indices[:-1],dims=use_shape[:-1])
+    outsize=(np.prod(use_shape[:-1]),use_shape[-1])
+    ri=np.ravel_multi_index(use_indices[:-1],dims=use_shape[:-1])
     maj_i=use_indices[-1]
 
-    outindices=torch.stack([ri,maj_i],axis=0)
+    outindices=np.stack([ri,maj_i],axis=0)
 
     return torch.sparse_coo_tensor(indices=outindices,values=thetensor.values(),size=outsize).coalesce()
 
@@ -263,32 +232,30 @@ def sproing(theflattensor,minor_dims,minorly=False) :
     ^^ If "minorly", otherwise so that first dimension is distributed among minor dims.
     """
 
-    tfts=_tcast(theflattensor.shape)
-
     if minorly : 
-        inindices=theflattensor.indices()
+        inindices=theflattensor.indices().cpu().numpy()
         major=inindices[0]
         rest=inindices[1]
 
         #print(theflattensor.shape[0]*np.prod(minor_dims),np.prod(theflattensor.shape))
-        assert theflattensor.shape[0]*torch.prod(_tcast(minor_dims))==torch.prod(tfts)
+        assert theflattensor.shape[0]*np.prod(minor_dims)==np.prod(theflattensor.shape)
 
-        sproinged_rest=torch.unravel_index(rest,shape=minor_dims)
+        sproinged_rest=np.unravel_index(rest,shape=minor_dims)
 
-        outindices=torch.stack([major,*sproinged_rest],axis=0)
+        outindices=np.stack([major,*sproinged_rest],axis=0)
         outsize=(theflattensor.shape[0],*minor_dims)
 
     else : 
-        inindices=theflattensor.indices()
+        inindices=theflattensor.indices().numpy()
         major=inindices[1]
         rest=inindices[0]
 
         #print(theflattensor.shape[0]*np.prod(minor_dims),np.prod(theflattensor.shape))
-        assert theflattensor.shape[1]*torch.prod(_tcast(minor_dims))==torch.prod(tfts)
+        assert theflattensor.shape[1]*np.prod(minor_dims)==np.prod(theflattensor.shape)
 
-        sproinged_rest=torch.unravel_index(rest,shape=minor_dims)
+        sproinged_rest=np.unravel_index(rest,shape=minor_dims)
 
-        outindices=torch.stack([*sproinged_rest,major],axis=0)
+        outindices=np.stack([*sproinged_rest,major],axis=0)
         outsize=(*minor_dims,theflattensor.shape[1])
     
     return torch.sparse_coo_tensor(indices=outindices,
@@ -297,8 +264,8 @@ def sproing(theflattensor,minor_dims,minorly=False) :
 
 
 def rotate(thetensor) : 
-    in_indices=thetensor.indices()
-    use_indices=torch.stack([*in_indices[1:],in_indices[0]],axis=0)
+    in_indices=thetensor.indices().cpu().numpy()
+    use_indices=np.stack([*in_indices[1:],in_indices[0]],axis=0)
     return torch.sparse_coo_tensor(
             indices=use_indices,
             values=thetensor.values(),
@@ -310,7 +277,7 @@ def as_directsum(theflattensor,n_blocks,minorly=False) :
         # viz. preserving the minor dimension as is
         assert theflattensor.shape[0] % n_blocks ==0 
 
-        use_indices=theflattensor.indices().clone()
+        use_indices=theflattensor.indices().cpu().numpy().copy()
         #n_blocks=theflattensor.shape[-1]//blocksize
         blocksize=theflattensor.shape[-1]//n_blocks
         out_shape=(theflattensor.shape[0]*n_blocks,theflattensor.shape[1])
@@ -323,7 +290,7 @@ def as_directsum(theflattensor,n_blocks,minorly=False) :
 
 
 
-        use_indices=theflattensor.indices().clone()
+        use_indices=theflattensor.indices().cpu().numpy().copy()
         blocksize=theflattensor.shape[0]//n_blocks
         out_shape=(theflattensor.shape[0],theflattensor.shape[1]*n_blocks)
 
@@ -331,7 +298,7 @@ def as_directsum(theflattensor,n_blocks,minorly=False) :
 
     return torch.sparse_coo_tensor(
                 indices=use_indices,
-                values=theflattensor.values().clone(),
+                values=theflattensor.values().cpu().numpy().copy(),
                 size=out_shape).coalesce() ;
 
 
@@ -363,10 +330,10 @@ def bmm(mat1,mat2) :
 
     else : 
         f1=flatten_minorly(mat1.coalesce())
-        op1=as_directsum(f1,n_blocks=torch.prod(mat1.shape[:-2]))
+        op1=as_directsum(f1,n_blocks=np.prod(mat1.shape[:-2]))
 
     if lsm2 == 2  : 
-        times_to_multiply=torch.prod(mat1.shape[:-2]) # viz. k or j*k times
+        times_to_multiply=np.prod(mat1.shape[:-2]) # viz. k or j*k times
         op2=flat_sparse_tensor_tile(mat2,times_to_multiply).to(dtype=mat2.dtype).coalesce()
     elif lsm2 ==3 and lsm1==4 : 
         print('warning! not sure I\'m going to test this use case.')

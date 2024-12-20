@@ -3,7 +3,8 @@
 if __name__ == '__main__'  :
     import argparse
     parser=argparse.ArgumentParser()
-    parser.add_argument('--lambda_selection',default=3.0,action='store')
+    parser.add_argument('--lambda_gene',default=3.0,action='store')
+    parser.add_argument('--lambda_system',default=3.0,action='store')
     parser.add_argument('--lambda_gb',default=1.5,action='store')
     parser.add_argument('--alpha_partition',default=2.5,action='store')
     parser.add_argument('--indir',required=True,action='store')
@@ -87,29 +88,21 @@ class BaseAdditiveModel(torch.nn.Module) :
                             0.0,1.0) 
 
 
-        if len(I.shape) > 1 and not (torch.tensor(I.shape) == 0.0).any() : 
-            idot=torch.matmul(I,corrected_iweights)
-        else : 
-            idot=torch.zeros_like(corrected_partition.view(-1))
+        idot=torch.matmul(I,corrected_iweights)
+        jdot=torch.matmul(fJ,corrected_jweights) # exj * j -> e
 
 
         if len(H.shape) > 1 and not (torch.tensor(H.shape) == 0.0).any() : 
-            proto_sely=corrected_partition.view(-1)*(idot+torch.matmul(H,corrected_hweights))
+            proto_sely=corrected_partition.view(-1)*(torch.matmul(I,corrected_iweights)+torch.matmul(H,corrected_hweights))
         else :
-            proto_sely=corrected_partition.view(-1)*idot
-
-        if len(fJ.shape) > 1 and not (torch.tensor(fJ.shape) == 0.0).any() : 
-            jdot=torch.matmul(fJ,corrected_jweights) # exj * j -> e
-        else : 
-            jdot=torch.zeros_like(corrected_partition.view(-1))
+            proto_sely=corrected_partition.view(-1)*torch.matmul(I,corrected_iweights)
 
         if self.normalize_synteny : 
             psy2=torch.pow(proto_sely,2)
             synteny_term=torch.sqrt(self.relu_sy(torch.matmul(torch.pow(self.synteny_broadcast,2),psy2) - psy2))
             yhat=proto_sely+synteny_term+jdot+self.intercept.repeat_interleave(self.ngenes)
         else : 
-            tall_intercept=self.intercept.repeat_interleave(self.synteny_broadcast.shape[0]//self.intercept.shape[0])
-            yhat=torch.matmul(self.synteny_broadcast,proto_sely)+jdot+tall_intercept
+            yhat=torch.matmul(self.synteny_broadcast,proto_sely)+jdot+self.intercept.repeat_interleave(self.ngenes)
 
 
         if not return_params : 
@@ -165,12 +158,12 @@ class LogPosterior(torch.nn.Module) :
 
     def parameter_prior(self,iweights,hweights,jweights) : 
         iparsum=Exponential(rate=torch.exp(self.working_loglambdas[0])).log_prob(iweights).sum()
-        hparsum=Exponential(rate=torch.exp(self.working_loglambdas[0])).log_prob(hweights).sum()
-        jparsum=Exponential(rate=torch.exp(self.working_loglambdas[1])).log_prob(jweights).sum()
+        hparsum=Exponential(rate=torch.exp(self.working_loglambdas[1])).log_prob(hweights).sum()
+        jparsum=Exponential(rate=torch.exp(self.working_loglambdas[2])).log_prob(jweights).sum()
         return iparsum+hparsum+jparsum
 
     def k_prior(self,iweights,hweights,jweights) : 
-        shapes=_tcast([iweights.shape[0]+hweights.shape[0],jweights.shape[0]])
+        shapes=_tcast([iweights.shape[0],hweights.shape[0],jweights.shape[0]])
         return Geometric(probs=(1-1/torch.exp(self.working_loglambdas))).log_prob(shapes).sum()
 
     def partition_prior(self,partition) : 
@@ -555,7 +548,7 @@ if __name__ == '__main__' :
         init_intercept=init_intercept,
         synteny_broadcast=synteny_broadcast,
         init_partition=init_partition,
-        init_loglambdas=_tcast([float(ns.lambda_selection),float(ns.lambda_gb)]).float(),
+        init_loglambdas=_tcast([float(ns.lambda_gene),float(ns.lambda_system),float(ns.lambda_gb)]).float(),
         partition_alpha=float(ns.alpha_partition),
         lr=1e-2,
         #lr=1e-3,
@@ -620,7 +613,7 @@ if __name__ == '__main__' :
                 init_intercept=sampler_init_intercept,
                 init_partition=sampler_init_partition[:,sampargs],
                 synteny_broadcast=thissb,
-                init_loglambdas=_tcast([float(ns.lambda_selection),float(ns.lambda_gb)]).float(),
+                init_loglambdas=_tcast([float(ns.lambda_gene),float(ns.lambda_system),float(ns.lambda_gb)]).float(),
                 partition_alpha=float(ns.alpha_partition),
                 lr=1e-2,
                 #lr=1e-3,

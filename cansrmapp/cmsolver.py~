@@ -87,29 +87,21 @@ class BaseAdditiveModel(torch.nn.Module) :
                             0.0,1.0) 
 
 
-        if len(I.shape) > 1 and not (torch.tensor(I.shape) == 0.0).any() : 
-            idot=torch.matmul(I,corrected_iweights)
-        else : 
-            idot=torch.zeros_like(corrected_partition.view(-1))
+        idot=torch.matmul(I,corrected_iweights)
+        jdot=torch.matmul(fJ,corrected_jweights) # exj * j -> e
 
 
         if len(H.shape) > 1 and not (torch.tensor(H.shape) == 0.0).any() : 
-            proto_sely=corrected_partition.view(-1)*(idot+torch.matmul(H,corrected_hweights))
+            proto_sely=corrected_partition.view(-1)*(torch.matmul(I,corrected_iweights)+torch.matmul(H,corrected_hweights))
         else :
-            proto_sely=corrected_partition.view(-1)*idot
-
-        if len(fJ.shape) > 1 and not (torch.tensor(fJ.shape) == 0.0).any() : 
-            jdot=torch.matmul(fJ,corrected_jweights) # exj * j -> e
-        else : 
-            jdot=torch.zeros_like(corrected_partition.view(-1))
+            proto_sely=corrected_partition.view(-1)*torch.matmul(I,corrected_iweights)
 
         if self.normalize_synteny : 
             psy2=torch.pow(proto_sely,2)
             synteny_term=torch.sqrt(self.relu_sy(torch.matmul(torch.pow(self.synteny_broadcast,2),psy2) - psy2))
             yhat=proto_sely+synteny_term+jdot+self.intercept.repeat_interleave(self.ngenes)
         else : 
-            tall_intercept=self.intercept.repeat_interleave(self.synteny_broadcast.shape[0]//self.intercept.shape[0])
-            yhat=torch.matmul(self.synteny_broadcast,proto_sely)+jdot+tall_intercept
+            yhat=torch.matmul(self.synteny_broadcast,proto_sely)+jdot+self.intercept.repeat_interleave(self.ngenes)
 
 
         if not return_params : 
