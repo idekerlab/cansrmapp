@@ -4,6 +4,26 @@ CanSRMaPP relies on a number of third-party files for reference and reconciling
 multiple data sources. This document describes the provenance of all such files,
 and hosts frozen copies since some may be updated in-place by the maintainers.
 
+# NCBI Files
+
+## Gene Info
+`Homo_sapiens.gene_info` was downloaded from
+[https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz] on
+November 3, 2024. This file is unrestricted as described [here](https://ftp.ncbi.nlm.nih.gov/README.ftp)
+
+## Genbank Flat File
+
+`GCF_000001405.40_GRCh38.p14_genomic.gff.gz` was downloaded from [this FTP directory](https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Homo_sapiens/latest_assembly_versions/GCF_000001405.40_GRCh38.p14/) on November 12, 2024. This file is unrestricted as described [here](https://ftp.ncbi.nlm.nih.gov/README.ftp)
+The reduced file `gff_reduced.gff.gz` derived from this one is the result of running the command 
+```
+gunzip -c GCF_000001405.40_GRCh38.p14_genomic.gff.gz | awk -F'     ' '$0 !~ /^#/ && $3 == "gene" && $9 ~/GeneID/ ' | gzip -c > gff_reduced.gff.gz
+```
+
+
+
+
+
+
 # Systems Maps
 
 This section describes the provenance of all systems maps used in the 
@@ -67,7 +87,7 @@ is incorporated to map these to their NEST IDs as published.
 ## reactome
 
 `NCBI2Reactome_All_Levels.txt` was downloaded from [https://reactome.org/download/current/]
-on July 6, 2023. It is redistributed here under CC0 Creative Commons Public Domain license.
+on November 3, 2024. It is redistributed here under CC0 Creative Commons Public Domain license.
 
 ## WEBSTER
 

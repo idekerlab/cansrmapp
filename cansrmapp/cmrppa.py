@@ -60,8 +60,10 @@ if __name__ == '__main__' :
     parser_build.add_argument(
             '--map_threshold',
             help='float: threshold below which to discard features'+\
-                   'from features in an <assembly_path>' ,
-                   default=0.45,
+                   'from features in an <assembly_path>. When > 0.0,'+\
+                   'implicitly checks for feature sturdiness.' ,
+
+                   default=0.00,
                     )
 
     feature_source_group.add_argument(
@@ -166,7 +168,7 @@ def feature_table_by_cmrun(**kwargs) :
         signatures=kwargs['signatures']
         assembly_path=kwargs['assembly_path']
         cm_output_path=kwargs['cm_output_path']
-        map_threshold=kwargs.get('map_threshold',0.45)
+        map_threshold=float(kwargs.get('map_threshold',0.00))
     except KeyError as e :
         raise(e,'feature_table_by_cmrun_requires'+\
                 '<assembly_path>,<cm_output_path>,'+\
@@ -217,12 +219,15 @@ def feature_table_by_cmrun(**kwargs) :
     slci=df.query('feattype=="gene"').set_index('feat').reindex(cma.gene_index)
     slch=df.query('feattype=="sys"').set_index('feat').reindex(cma.sys_index)
     slcj=df.query('feattype=="gb"').set_index('feat').reindex(cma.gb_index)
-    #worthy_i_indices=slci.is_sturdy & slci.map_estimate.gt(map_threshold)
-    #worthy_h_indices=slch.is_sturdy & slch.map_estimate.gt(map_threshold)
-    #worthy_j_indices=slcj.is_sturdy & slcj.map_estimate.gt(map_threshold)
-    worthy_i_indices=slci.map_estimate.gt(0.0)
-    worthy_h_indices=slch.map_estimate.gt(0.0)
-    worthy_j_indices=slcj.map_estimate.gt(0.0)
+
+    if map_threshold > 0 : 
+        worthy_i_indices=slci.is_sturdy & slci.map_estimate.gt(map_threshold)
+        worthy_h_indices=slch.is_sturdy & slch.map_estimate.gt(map_threshold)
+        worthy_j_indices=slcj.is_sturdy & slcj.map_estimate.gt(map_threshold)
+    else : 
+        worthy_i_indices=slci.map_estimate.gt(0.0)
+        worthy_h_indices=slch.map_estimate.gt(0.0)
+        worthy_j_indices=slcj.map_estimate.gt(0.0)
 
     hnpd=H.to_dense().numpy()[row_indices_of_oframe_genes][:,worthy_h_indices]
     rppai=oframe[cma.gene_index[worthy_i_indices]].copy()

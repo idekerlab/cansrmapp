@@ -262,22 +262,22 @@ def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None) :
 
     pcs={ 
             ('mut',True)  : PatchCollection(patchlists[('mut',True)  ],
-                        facecolor=mutcolor,edgecolor='none',rasterized=True), 
+                        facecolor=mutcolor,edgecolor='none',rasterized=True,zorder=10), 
             ('mut',False) : PatchCollection(patchlists[('mut',False) ],
-                facecolor=fade(mutcolor),edgecolor='none',rasterized=True), 
+                facecolor=fade(mutcolor),edgecolor='none',rasterized=True,zorder=7), 
             ('fus',True)  : PatchCollection(patchlists[('fus',True)  ],
-                facecolor='none',edgecolor=fuscolor,rasterized=True), 
+                facecolor='none',edgecolor=fuscolor,rasterized=True,zorder=6), 
             ('fus',False) : PatchCollection(patchlists[('fus',False) ],
-                facecolor='none',edgecolor=fade(fuscolor),rasterized=True), 
+                facecolor='none',edgecolor=fade(fuscolor),rasterized=True,zorder=5), 
             ('up',True)   : PatchCollection(patchlists[('up',True)   ],
-                facecolor=upcolor,edgecolor='none',rasterized=True), 
+                facecolor=upcolor,edgecolor='none',rasterized=True,zorder=4), 
             ('up',False)  : PatchCollection(patchlists[('up',False)  ],
                 facecolor=fade(upcolor,lighten=2.0),edgecolor='none',
-                                                rasterized=True), 
+                                                rasterized=True,zorder=3), 
             ('dn',True)   : PatchCollection(patchlists[('dn',True)   ],
-                facecolor=dncolor,edgecolor='none',rasterized=True), 
+                facecolor=dncolor,edgecolor='none',rasterized=True,zorder=2), 
             ('dn',False)  : PatchCollection(patchlists[('dn',False)  ],
-                facecolor=fade(dncolor),edgecolor='none',rasterized=True), 
+                facecolor=fade(dncolor),edgecolor='none',rasterized=True,zorder=1), 
     }
 
     #background_cells=make_patchlist(cbg,rbg,**full_patch_kwargs)

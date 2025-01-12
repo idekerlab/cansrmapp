@@ -1,8 +1,43 @@
+import sys
+import pickle
 import pandas as pd
 import os
+import cansrmapp.cmbioinfo as cmbi
+import numpy as np
 
 PKGROOT=os.path.abspath('../')
-OUTPUTS=os.path.join(PKGROOT,'outputs')
+BIROOT=os.path.abspath('../bioinfo_redistributed')
+OUTPUTS=os.path.join(PKGROOT,'systems_maps')
+
+cmbi.boot_bioinfo()
+
+def obo_to_frame(obofilepath) : 
+    terms=list()
+    start_scanning=False
+
+    with open(obofilepath,'r') as obo  : 
+
+        thisterm=dict()
+
+        for line in obo : 
+            if line.strip() == '[Term]' :
+                    start_scanning=True
+                    continue
+
+            if line.strip() == '' : 
+                start_scanning=False
+                terms.append(thisterm)
+                thisterm=dict()
+                continue
+
+            if start_scanning : 
+                ll=line.split(':')
+                thisterm.update({ ll[0] : (':'.join(ll[1:])).strip() })
+
+    df=pd.DataFrame(terms)
+    return df
+
+
 
 def actpwy_wf(infiles) : 
     pcawg_raw=pd.read_csv(infiles[0],
@@ -23,7 +58,7 @@ def actpwy_wf(infiles) :
     for x,r in pcawg_raw.iterrows() : 
         system_content=set()
         for g in r.genes.split(':') : 
-            e=kg.hier.s2eid.get(g) ;
+            e=cmbi._s2e.get(g,cmbi._synonyms2e.get(g,g)) ;
             if e is None : continue
             system_content.add(e)
         ph.update({ r.sysname : system_content })
@@ -62,7 +97,7 @@ go_invalid_evidence={
 
 def corum_wf(infiles) :
     corum_raw=pd.read_excel(infiles[0])
-    corum_relevant=corum_raw[ corum_raw.Organism.isin({'Mammalia','Human'}) ]
+    corum_relevant=corum_raw[ corum_raw.Organism.isin({'Mammalia','Human'}) ].copy()
     corum_relevant['components']=corum_relevant['subunits(Entrez IDs)'].astype(str).str.split(';') 
 
     corum=dict()
@@ -75,7 +110,7 @@ def go_wf(infiles) :
 
     gobasicfilepath,gene2gohumanfilepath=infiles
 
-    gobasic=pd.read_csv(gobasicfilepath,index_col=0).dropna(subset='id').infer_objects()
+    gobasic=obo_to_frame(gobasicfilepath).dropna(subset='id').infer_objects()
     gobasic=gobasic.assign(is_obsolete=gobasic.is_obsolete.astype(bool).fillna(False))
     gobasic=gobasic.query('not is_obsolete')
     gobasic['parent']=gobasic.is_a.apply(lambda s : s.split(' ')[0] if type(s) == str else '')
@@ -98,15 +133,16 @@ def go_wf(infiles) :
 
     g2gohuman=pd.read_csv(gene2gohumanfilepath,sep='\t')
     g2gohuman=g2gohuman[ ~g2gohuman.Qualifier.str.contains('NOT')] 
-    g2gohuman=g2gohuman.query('Evidence in @valid_evidence')
+    g2gohuman=g2gohuman.query('Evidence in @go_valid_evidence')
 
     bpd=dict()
     ccd=dict()
     mfd=dict()
 
-    from tqdm.auto import tqdm
+    #from tqdm.auto import tqdm
 
-    for x,r in tqdm(g2gohuman.iterrows(),total=g2gohuman.shape[0]): 
+    #for x,r in tqdm(g2gohuman.iterrows(),total=g2gohuman.shape[0]): 
+    for x,r in g2gohuman.iterrows(): 
         if r.Category == "Process" : 
             bpd.update({ r.GO_ID: bpd.get(r.GO_ID,set()) | {str(r.GeneID),} })
             continue
@@ -120,7 +156,7 @@ def go_wf(infiles) :
     old_bpd=dict(bpd)
     y=0
     while True : 
-        print('pass',y := y+1)
+        #print('pass',y := y+1)
         for x,r in gobasic_bp.iterrows() : 
             if r.parent == '' : 
                 continue
@@ -133,7 +169,7 @@ def go_wf(infiles) :
     old_ccd=dict(ccd)
     y=0
     while True : 
-        print('pass',y := y+1)
+        #print('pass',y := y+1)
         for x,r in gobasic_cc.iterrows() : 
             if r.parent == '' : 
                 continue
@@ -146,7 +182,7 @@ def go_wf(infiles) :
     old_mfd=dict(mfd)
     y=0
     while True : 
-        print('pass',y := y+1)
+        #print('pass',y := y+1)
         for x,r in gobasic_mf.iterrows() : 
             if r.parent == '' : 
                 continue
@@ -162,8 +198,8 @@ def go_wf(infiles) :
 
 def kuenzi_wf(infiles) :
     consensus_fr=pd.read_excel(infiles[0]).dropna(subset='genes')
-    kuenzi_consensus={ r.name : { kg._s2e[g] for g in r.genes.split('|') 
-                        if g in kg._s2e } for x,r in consensus_fr.iterrows() }
+    kuenzi_consensus={ r.name : { cmbi._s2e.get(g,cmbi._synonyms2e.get(g,g)) for g in r.genes.split('|') 
+                        if g in cmbi._s2e or g in cmbi._synonyms2e} for x,r in consensus_fr.iterrows() }
 
     return kuenzi_consensus
 
@@ -177,7 +213,7 @@ def ont2dict(ontfilename,debug=False,lowlouvain=False,merge=False) :
             ls=line.strip().split('\t')
             protochild=ls[1]
             if ls[-1] == 'gene' or ls[-2] == 'gene' :
-                child=s2eid.get(protochild)
+                child=cmbi._s2e.get(protochild,cmbi._synonyms2e.get(protochild,protochild))
                 if child is None : continue
                 # add gene to list of genes of interest
                 ogenes.add(child)
@@ -226,18 +262,20 @@ def ont2dict(ontfilename,debug=False,lowlouvain=False,merge=False) :
 
     return nh
 
-def nest_wf(infiles) : pass
+def nest_wf(infiles) : 
     ontfilename=infiles[0]
     nh=ont2dict(ontfilename,lowlouvain=False)
     return nh
 
-def reactome_wf() : 
+def reactome_wf(infiles) : 
     df=pd.read_csv(infiles[0],sep='\t',
         names=['GeneID','identifier','url','sysname','evidence','organism'],
+        dtype=str,
         )
 
     reactome=dict()
     for x,r in df.iterrows() :
+        if r.organism != "Homo sapiens" : continue
         reactome.update({ r.sysname  : reactome.get(r.sysname,set())|{r.GeneID,} })
 
     return reactome
@@ -286,11 +324,12 @@ def wikipathways_wf(infiles) :
         xrefs = root.findall('.//gpml:Xref',namespaces=namespaces)
 
         # Extract all the ID attributes
-        ids = [xref.get('ID') for xref in xrefs if xref.get('Database') == 'Entrez Gene' ]
-        return (pathway_name,set(ids))
+        ids = [xref.get('ID') for xref in xrefs if xref.get('Database') in { 'Ensembl','Entrez Gene'} ]
+        ids2= [ i if i in cmbi._e2s else cmbi._ens2e.get(i) for i in ids ]
+        return (pathway_name,set(ids2))
 
-    from tqdm.auto import tqdm
-    wp=[ geteids(p) for p in tqdm(gpmls,total=len(gpmls)) ]
+    #from tqdm.auto import tqdm
+    wp=[ geteids(p) for p in gpmls ]
 
     return dict(wp)
 
@@ -312,7 +351,7 @@ def wk_wf(infiles) :
         for c in kambergenecols : 
             g=r.get(c)
             if g is None : continue
-            e=kg._s2e.get(g) ;
+            e=cmbi._s2e.get(g,cmbi._synonyms2e.get(g,g)) ;
             if e is None : continue
             system_content.add(e)
         kh.update({ system_name : system_content })
@@ -326,9 +365,9 @@ WFD={
         'kuenzi'  : kuenzi_wf,
         'nest'    : nest_wf,
         'reactome'    : reactome_wf,
-        'webster'    : nest_wf,
-        'wikipathways'    : nest_wf,
-        'wk'    : nest_wf,
+        'webster'    : webster_wf,
+        'wikipathways'    : wikipathways_wf,
+        'wk'    : wk_wf,
     }
 
 
@@ -336,60 +375,73 @@ def process(infilepaths,fkey,outfilepath) :
     with open(outfilepath,'wb') as f : 
         pickle.dump(WFD[fkey](infilepaths),f)
 
+path_actpwy=os.path.join(BIROOT,'cds_noncds_ActiveDriverPW_PCAWGintegrated.Pancan-no-skin-melanoma-lymph_noEnh__results_300817.txt')
+path_corum=os.path.join(BIROOT,'CORUM download 2022_09_12.xlsx')
+paths_go=[ os.path.join(BIROOT,sp) for sp in ['go_basic.obo','gene2go_human'] ]
+path_kuenzi=os.path.join(BIROOT,'NIHMS1571677-supplement-Supp_Table_3.xlsx')
+path_nest=os.path.join(BIROOT,'IAS_clixo_hidef_Nov17.edges', )
+path_reactome=os.path.join(BIROOT,'NCBI2Reactome_All_Levels.txt')
+path_webster=os.path.join(BIROOT,'1-s2.0-S2405471221004889-mmc4.xlsx')
+# no wikipathways path declared here deliberately
+path_wk=os.path.join(BIROOT,'Supplementary_Data_2.xlsx',)
+
 
 jobs=[
         #activepathways
-        (['cds_noncds_ActiveDriverPW_PCAWGintegrated.Pancan-no-skin-melanoma-lymph_noEnh__results_300817.txt',
+        ([path_actpwy,],
           'actpwy',
           os.path.join(OUTPUTS,'actpwy.pickle')
-          ]),
+          ),
         #corum
-        (['CORUM download 2022_09_12.xlsx'],
+        ([path_corum],
          'corum',
          os.path.join(OUTPUTS,'corum.pickle')
          ),
         #go
-        (['gene2go_human','go_basic.obo'],
+        (paths_go,
           'go',
          os.path.join(OUTPUTS,'go_unity.pickle')
          ),
         #kuenzi
-        ([ 'NIHMS1571677-supplement-Supp_Table_3.xlsx',],
+        ([ path_kuenzi,],
          'kuenzi',
          os.path.join(OUTPUTS,'kuenzi.pickle')
         ),
         #nest
-        ([ 'IAS_clixo_hidef_Nov17.edges', ],
+        ([ path_nest,],
          'nest',
          os.path.join(OUTPUTS,'nest.pickle')
         ),
         #reactome
-        ([ 'NCBI2Reactome_All_Levels.txt', ],
+        ([ path_reactome ],
          'reactome',
-         os.path.join(OUTPUTS,'nest.pickle')
+         os.path.join(OUTPUTS,'reactome.pickle')
         ),
         #webster
-        ([ '1-s2.0-S2405471221004889-mmc4.xlsx'], # DON'T ADD THIS
+        ([ path_webster], # DON'T GIT-ADD THIS
          'webster',
          os.path.join(OUTPUTS,'webster.pickle'),
         ),
 
         #wikipathways
-        ([ os.path.join('wikipathways_gpml',p) for p in os.listdir('wikipathways_gpml') ],
+        ([ os.path.join(PKGROOT,'bioinfo_redistributed','wikipathways_gpml',p) 
+            for p in os.listdir(
+                os.path.join(
+                    PKGROOT,'bioinfo_redistributed','wikipathways_gpml',
+                ))
+            ],
          'wikipathways',
-         os.path.join(OUTPUTS,'webster.pickle'),
+         os.path.join(OUTPUTS,'wikipathways.pickle'),
         ),
 
         #wk
-        (['Supplementary_Data_2.xlsx',], # DON'T ADD THIS
+        ([path_wk,], # DON'T GIT-ADD THIS
          'wk',
          os.path.join(OUTPUTS,'wk.pickle'),
         ),
 ]
 
-
-          
-
-
-
-
+if __name__ == '__main__' : 
+    for j in jobs : 
+        print(j[1])
+        process(*j)

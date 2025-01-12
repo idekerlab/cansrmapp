@@ -27,8 +27,8 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['requests',
-                'cellmaps_utils']
+with open('requirements.txt') as req_file : 
+    requirements = [ line.strip() for lin in req_file ]
 
 setup_requirements = [ ]
 
@@ -40,9 +40,6 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11'
     ],
     description=desc,
