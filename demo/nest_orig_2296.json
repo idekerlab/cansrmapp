@@ -1,0 +1,12 @@
+{
+"omics_path": "../data/omics.csv", 
+"signature_path": "../data/signatures.csv", 
+"sm_path": "../systems_maps/nest.pickle", 
+"blacklist_path": "../data/lowly_expressed_blacklist.pickle", 
+"length_timing_path": "../data/dfrt.hdf", 
+"output_path": "nest_orig_2296", 
+"signature_sparsity": 0.05, 
+"no_arm_pcs": true, 
+"spoof_seed": "orig", 
+"spoof_smsize": 2296
+}
