@@ -13,6 +13,7 @@ from sklearn.linear_model import ElasticNet,ElasticNetCV
 from sklearn.preprocessing import RobustScaler,MaxAbsScaler,PowerTransformer,QuantileTransformer
 from sklearn.model_selection import KFold,ShuffleSplit,GridSearchCV
 from scipy.stats import pearsonr,spearmanr
+from scipy.sparse import coo_array,csr_array
 import warnings
 import pickle
 import time
@@ -308,6 +309,8 @@ def do_fitting(featuretable,probevec,randseed='Whisky') :
     ytrain=probevec.values[train].astype(float)
     ytest=probevec.values[test].astype(float)
 
+
+
     starttime=time.time()
     model=trainer(
                 xtrain,
@@ -360,6 +363,12 @@ def trainer(X,y) :
                 refit=False,
                 cv=KFold(n_splits=10,shuffle=True,random_state=word_to_seed('Yankee')),
                 )
+
+        #if False : 
+        #if X.shape[1] > int(1e3) : 
+        #    X=csr_array(coo_array(X))
+        # this does not aid performance even in the whole-genome case
+
         gscv.fit(X,y)
 
         enet=ElasticNet(**gscv.best_params_)
@@ -368,7 +377,8 @@ def trainer(X,y) :
         igrid=np.zeros((NSPLITS,))
 
         for c,(tr,ti) in enumerate(shus.split(X)) : 
-            enet.fit(X[tr,:],y[tr])
+            enet.fit(X[tr],y[tr])
+            #enet.fit(X[tr,:],y[tr])
             cgrid[c,:]=enet.coef_.copy()
             igrid[c]=enet.intercept_.copy()
 

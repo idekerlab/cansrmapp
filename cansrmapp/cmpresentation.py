@@ -1,4 +1,5 @@
 import os
+opj=os.path.join
 from matplotlib import pyplot as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib.patches import Rectangle
@@ -9,6 +10,7 @@ from cansrmapp import torch
 from scipy.special import expit
 import colorsys
 import pickle
+import sys
 
 torch.serialization.add_safe_globals(
     [
@@ -22,6 +24,7 @@ torch.serialization.add_safe_globals(
 import cansrmapp.cmbioinfo as cmbi
 
 ETYPES=('mut','fus','up','dn')
+
 
 ################################################################################
 #   COLORS
@@ -90,7 +93,7 @@ cell_padding_width=0.05
 cell_padding_height=0.05
 full_patch_height=cell_block_height-cell_padding_height*cell_block_height
 full_patch_width=cell_block_width-cell_padding_height*cell_block_width
-small_patch_height=0.25*cell_block_height
+small_patch_height=0.4*cell_block_height
 small_patch_upshift=full_patch_height/2-small_patch_height/2
 
 cell_bg_color='#dddddd'
@@ -102,7 +105,7 @@ def invert_hue(ctf) :
     return colorsys.hsv_to_rgb(newh,s,v)
 
 def ct2h(ctup) : 
-    return '#'+''.join([ hex(int(ct*255))[2:] for ct in ctup[:3] ]) 
+    return '#'+''.join([ '{:0>2}'.format(hex(int(ct*255))[2:]) for ct in ctup[:3] ]) 
 
 def h2cti(h) : 
     return tuple([ int(h[2*x-1:2*x+1],16) for x in range(1,4) ])
@@ -120,7 +123,7 @@ def fade(chex,desat=0.2,lighten=1.2) :
     rgb=h2ctf(chex)
     h,s,v=colorsys.rgb_to_hsv(*rgb)
     s*=desat
-    v=max(v*lighten,1.0)
+    v=min(v*lighten,1.0)
 
     h,s,v=np.clip([h,s,v],0.0,1.0)
     
@@ -155,7 +158,7 @@ def get_indices_of_etype(megamelt,etype) :
     retval=slc.values.transpose()
     return retval
 
-def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None) : 
+def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None,restrict_to_selected=True) : 
 
     if patients is None : 
         patients=next(iter(subomics.values())).index
@@ -184,9 +187,14 @@ def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None) :
     subsubomics_sel={ k : v.loc[list(genes_with[k])] for k,v in subomics.items() }
 
     #241211
-    relevant_pats=reduce(
-            np.bitwise_or,[ (v>0).any(axis=0) for v in subsubomics_sel.values() ]
-            )
+    if restrict_to_selected : 
+        relevant_pats=reduce(
+                np.bitwise_or,[ (v>0).any(axis=0) for v in subsubomics_sel.values() ]
+                )
+    else : 
+        relevant_pats=reduce(
+                np.bitwise_or,[ (v>0).any(axis=0) for v in subsubomics_g.values() ]
+                )
 
    #relevant_pats=reduce(
    #        np.bitwise_or,[ (v>0).any(axis=0) for v in subsubomics_g.values() ]
@@ -262,22 +270,22 @@ def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None) :
 
     pcs={ 
             ('mut',True)  : PatchCollection(patchlists[('mut',True)  ],
-                        facecolor=mutcolor,edgecolor='none',rasterized=True,zorder=10), 
+                        facecolor=mutcolor,edgecolor=mutcolor,rasterized=True,zorder=10), 
             ('mut',False) : PatchCollection(patchlists[('mut',False) ],
-                facecolor=fade(mutcolor),edgecolor='none',rasterized=True,zorder=7), 
+                facecolor=fade(mutcolor),edgecolor=fade(mutcolor),rasterized=True,zorder=7), 
             ('fus',True)  : PatchCollection(patchlists[('fus',True)  ],
                 facecolor='none',edgecolor=fuscolor,rasterized=True,zorder=6), 
             ('fus',False) : PatchCollection(patchlists[('fus',False) ],
                 facecolor='none',edgecolor=fade(fuscolor),rasterized=True,zorder=5), 
             ('up',True)   : PatchCollection(patchlists[('up',True)   ],
-                facecolor=upcolor,edgecolor='none',rasterized=True,zorder=4), 
+                facecolor=upcolor,edgecolor=upcolor,rasterized=True,zorder=4), 
             ('up',False)  : PatchCollection(patchlists[('up',False)  ],
-                facecolor=fade(upcolor,lighten=2.0),edgecolor='none',
+                facecolor=fade(upcolor,lighten=2.0),edgecolor=fade(upcolor,lighten=2.0),
                                                 rasterized=True,zorder=3), 
             ('dn',True)   : PatchCollection(patchlists[('dn',True)   ],
-                facecolor=dncolor,edgecolor='none',rasterized=True,zorder=2), 
+                facecolor=dncolor,edgecolor=dncolor,rasterized=True,zorder=2), 
             ('dn',False)  : PatchCollection(patchlists[('dn',False)  ],
-                facecolor=fade(dncolor),edgecolor='none',rasterized=True,zorder=1), 
+                facecolor=fade(dncolor),edgecolor=fade(dncolor),rasterized=True,zorder=1), 
     }
 
     #background_cells=make_patchlist(cbg,rbg,**full_patch_kwargs)
@@ -308,6 +316,8 @@ def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None) :
 ################################################################################
 #   EVENT AND FEATURE DISSECTION
 ################################################################################
+
+
 
 class CMAnalyzer(object) : 
     def __init__(self,I,H,J,synteny_broadcast,arrays,best_params,normalize_synteny=False): 
@@ -393,11 +403,16 @@ class CMAnalyzer(object) :
         print(self.output_log_odds[typeindex*len(self.iweights)+eindex].numpy())
         return orows
 
-    def errors(self,symbol) : 
-        eid=cmbi._s2e.get(symbol)
+    def errors(self,identifier) : 
+        try :
+            int(identifier)
+            eid=identifier
+        except ValueError : 
+            eid=cmbi._s2e.get(identifier)
         eindex=np.argwhere(self.gene_index == eid).ravel()[0]
         ri=np.ravel_multi_index(np.c_[np.arange(4,dtype='int'),[eindex]*4].transpose(),dims=self.J.shape[:-1])
         
+        print(eid,cmbi._e2s.get(eid))
         print(*['{: <10}'.format(et) for et in ETYPES])
         print(*['{: >6.2f}    '.format(ec)  for ec in self.target_event_counts[torch.tensor(ri)]])
         print(*['{: >6.2f}    '.format(ec)  for ec in self.yhat[torch.tensor(ri)]])
@@ -474,7 +489,7 @@ class CMAnalyzer(object) :
         else : 
             return fc > cutoff
 
-    def feature_summary_frame(self,bp_subsample_files,quantiles=(0.025,0.975),parallel=True) : 
+    def feature_summary_frame(self,bp_subsample_files=None,quantiles=(0.025,0.975),parallel=True) : 
         import multiprocessing as mp
         if None is bp_subsample_files or\
             (type(bp_subsample_files) == list and len(bp_subsample_files) == 0) : 
@@ -544,6 +559,16 @@ class CMAnalyzer(object) :
 
         return df
 
+def loadcma(indir,outdir) : 
+    thiscma=CMAnalyzer(
+        I=tload(opj(indir,'I.pt')),
+        H=tload(opj(indir,'H.pt')),
+        J=tload(opj(indir,'J.pt')).to_dense(),
+        synteny_broadcast=tload(opj(indir,'synteny_broadcast.pt')).float(),
+        arrays=np.load(opj(indir,'arrays.npz'),allow_pickle=True),
+        best_params=tload(opj(outdir,'bp.pt')),
+        )
+    return  thiscma
 
 
 class CMAnalyzer_numpy(object) : 
@@ -630,11 +655,17 @@ class CMAnalyzer_numpy(object) :
         print(self.output_log_odds[typeindex*len(self.iweights)+eindex])
         return orows
 
-    def errors(self,symbol) : 
-        eid=cmbi._s2e.get(symbol)
+    def errors(self,identifier) : 
+        try :
+            int(identifier)
+            eid=identifier
+        except ValueError : 
+            eid=cmbi._s2e.get(identifier)
+
         eindex=np.argwhere(self.gene_index == eid).ravel()[0]
         ri=np.ravel_multi_index(np.c_[np.arange(4,dtype='int'),[eindex]*4].transpose(),dims=self.J.shape[:-1])
         
+        print(eid,cmbi._e2s.get(eid))
         print(*['{: <10}'.format(et) for et in ETYPES])
         print(*['{: >6.2f}    '.format(ec)  for ec in self.target_event_counts[ri]])
         print(*['{: >6.2f}    '.format(ec)  for ec in self.yhat[ri]])

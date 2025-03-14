@@ -1,6 +1,7 @@
 import torch
 import time
 import sys
+import builtins
 from . import DEVICE
 from . import np
 
@@ -23,9 +24,15 @@ def word_to_seed(word) :
     return int(hashlib.shake_128(word.encode()).hexdigest(4),16)
 
 def msg(*args,**kwargs) : 
-    print(time.strftime("%m%d %H:%M:%S",time.localtime())+'|',*args,**kwargs)
-    time.sleep(0) # for issues with ipython interpreters
-    sys.stdout.flush()
+    if hasattr(builtins,'__IPYTHON__') : 
+        clear=False
+        if kwargs.get('end') == '\r'  : clear=True
+        display(' '.join([time.strftime("%m%d %H:%M:%S",time.localtime())+'|',*args]),clear=clear)
+    else : 
+        print(time.strftime("%m%d %H:%M:%S",time.localtime())+'|',*args,**kwargs)
+        time.sleep(0) # for issues with ipython interpreters
+        sys.stdout.flush()
+
 
 def diag_embed(thetensor,minorly=False) :
 
