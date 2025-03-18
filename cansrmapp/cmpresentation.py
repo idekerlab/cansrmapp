@@ -178,15 +178,11 @@ def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None,restric
 
     genes=np.intersect1d(next(iter(subomics.values())).index,list(genes))
 
-    #241211
     genes_with={ k : np.intersect1d(dfus[ dfus[k] ].index,genes) for k in ETYPES }
 
     subsubomics_g={ k : v.loc[list(genes)] for k,v in subomics.items() }
-
-    #241211
     subsubomics_sel={ k : v.loc[list(genes_with[k])] for k,v in subomics.items() }
 
-    #241211
     if restrict_to_selected : 
         relevant_pats=reduce(
                 np.bitwise_or,[ (v>0).any(axis=0) for v in subsubomics_sel.values() ]
@@ -242,6 +238,7 @@ def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None,restric
                 index=gene_order,columns=patient_order
                 ).values.transpose().nonzero() for k,v in subsubomics_gp.items() }
 
+
     patchlists={ ('mut',True)  :
                     make_patchlist(*subsubomics_nz[('mut',True)  ],
                                          **half_patch_kwargs) ,
@@ -268,25 +265,38 @@ def oncogrid(genes,subomics,dfus,patients=None,axes=None,gene_order=None,restric
                                              **full_patch_kwargs) ,
             }
 
-    pcs={ 
-            ('mut',True)  : PatchCollection(patchlists[('mut',True)  ],
-                        facecolor=mutcolor,edgecolor=mutcolor,rasterized=True,zorder=10), 
-            ('mut',False) : PatchCollection(patchlists[('mut',False) ],
-                facecolor=fade(mutcolor),edgecolor=fade(mutcolor),rasterized=True,zorder=7), 
-            ('fus',True)  : PatchCollection(patchlists[('fus',True)  ],
-                facecolor='none',edgecolor=fuscolor,rasterized=True,zorder=6), 
-            ('fus',False) : PatchCollection(patchlists[('fus',False) ],
-                facecolor='none',edgecolor=fade(fuscolor),rasterized=True,zorder=5), 
-            ('up',True)   : PatchCollection(patchlists[('up',True)   ],
-                facecolor=upcolor,edgecolor=upcolor,rasterized=True,zorder=4), 
-            ('up',False)  : PatchCollection(patchlists[('up',False)  ],
-                facecolor=fade(upcolor,lighten=2.0),edgecolor=fade(upcolor,lighten=2.0),
-                                                rasterized=True,zorder=3), 
-            ('dn',True)   : PatchCollection(patchlists[('dn',True)   ],
-                facecolor=dncolor,edgecolor=dncolor,rasterized=True,zorder=2), 
-            ('dn',False)  : PatchCollection(patchlists[('dn',False)  ],
-                facecolor=fade(dncolor),edgecolor=fade(dncolor),rasterized=True,zorder=1), 
-    }
+    if restrict_to_selected : 
+        pcs={ 
+                ('mut',True)  : PatchCollection(patchlists[('mut',True)  ],
+                            facecolor=mutcolor,edgecolor=mutcolor,rasterized=True,zorder=10), 
+                ('fus',True)  : PatchCollection(patchlists[('fus',True)  ],
+                    facecolor='none',edgecolor=fuscolor,rasterized=True,zorder=6), 
+                ('up',True)   : PatchCollection(patchlists[('up',True)   ],
+                    facecolor=upcolor,edgecolor=upcolor,rasterized=True,zorder=4), 
+                ('dn',True)   : PatchCollection(patchlists[('dn',True)   ],
+                    facecolor=dncolor,edgecolor=dncolor,rasterized=True,zorder=2), 
+        }
+
+    else: 
+        pcs={ 
+                ('mut',True)  : PatchCollection(patchlists[('mut',True)  ],
+                            facecolor=mutcolor,edgecolor=mutcolor,rasterized=True,zorder=10), 
+                ('mut',False) : PatchCollection(patchlists[('mut',False) ],
+                    facecolor=fade(mutcolor),edgecolor=fade(mutcolor),rasterized=True,zorder=7), 
+                ('fus',True)  : PatchCollection(patchlists[('fus',True)  ],
+                    facecolor='none',edgecolor=fuscolor,rasterized=True,zorder=6), 
+                ('fus',False) : PatchCollection(patchlists[('fus',False) ],
+                    facecolor='none',edgecolor=fade(fuscolor),rasterized=True,zorder=5), 
+                ('up',True)   : PatchCollection(patchlists[('up',True)   ],
+                    facecolor=upcolor,edgecolor=upcolor,rasterized=True,zorder=4), 
+                ('up',False)  : PatchCollection(patchlists[('up',False)  ],
+                    facecolor=fade(upcolor,lighten=2.0),edgecolor=fade(upcolor,lighten=2.0),
+                                                    rasterized=True,zorder=3), 
+                ('dn',True)   : PatchCollection(patchlists[('dn',True)   ],
+                    facecolor=dncolor,edgecolor=dncolor,rasterized=True,zorder=2), 
+                ('dn',False)  : PatchCollection(patchlists[('dn',False)  ],
+                    facecolor=fade(dncolor),edgecolor=fade(dncolor),rasterized=True,zorder=1), 
+        }
 
     #background_cells=make_patchlist(cbg,rbg,**full_patch_kwargs)
     ncols=len(patient_order)

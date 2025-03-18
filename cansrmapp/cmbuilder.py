@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-# coding: utf-8
+"""
+Build matrices and tensors for CanSRMaPP Model solving.
+"""
 if __name__ == '__main__'  :
     import argparse
     parser=argparse.ArgumentParser()
@@ -16,11 +18,11 @@ if __name__ == '__main__'  :
                             required=False,
                             action='store',
                             default='orig',
-                            help='random seed for spoofing. Can be created from a (memorable) string.'
+                            help='random seed for spoofing. Can be created from a (memorable) string. `orig` (default) signifies no randomization'
                             )
     parser.add_argument('--force_zero_path',
                         action='store',
-                        help='file path of pickled gene set for which to force zero values in the genomic background tensor J. (in publication: DDR  genes)',
+                        help='file path of pickled gene set for which to force zero values in the genomic background tensor J. (not used)',
                         required=False,
                         )
     parser.add_argument('--blacklist_path',
@@ -41,6 +43,13 @@ if __name__ == '__main__'  :
                         help='For synteny broadcasting, requires that a broadcasting gene'+\
                             'must have this value or more of the maximum alteration count on that arm.'
                         )
+    parser.add_argument('--critical_synteny_quantile',
+                        required=False,
+                        action='store',
+                        default=0.80,
+                        help='For synteny broadcasting, requires that a broadcasting gene'+\
+                            'must be at this quantile or greater for the relevant alteration.'
+                        )
     parser.add_argument('--normalize_synteny',
                         required=False,
                         action='store_true',
@@ -53,6 +62,7 @@ import cansrmapp
 from cansrmapp import pd
 from cansrmapp import np
 from cansrmapp import torch
+from cansrmapp import random
 import cansrmapp.utils as cmu
 from cansrmapp.utils import _tcast
 import cansrmapp.cmbioinfo as cmbi
@@ -71,9 +81,6 @@ import warnings
 from functools import reduce
 
 opj=os.path.join
-
-
-#TODO olfactory receptor blacklisting-- possibly handled in bioinfo
 
 ETYPES=('mut',
 'fus','up','dn')
@@ -96,6 +103,7 @@ class BuilderSettings(object) :
     spoof_seed : typing.Union[str,int] = 'orig'
     spoof_smsize : int=-1
     arm_quotient : float=0.95
+    critical_synteny_quantile : float=0.80
     normalize_synteny : bool=False
     
 
@@ -184,11 +192,16 @@ def get_matching_chromosome_tensor(master_gene_index) :
     chrmatch=torch.tensor((ggis.values[:,None]==ggis.values),dtype=torch.bool).to_sparse_coo()
     return chrmatch
 
+def get_arm_vec(master_gene_index) : 
+    if _dfarm is None : 
+        _prep_arm_relative(master_gene_index)
+    return _dfarm.copy().set_index('GeneID')['arm'].reindex(master_gene_index).fillna('')
+
 def get_matching_arm_tensor(master_gene_index) : 
     if _dfarm is None : 
         _prep_arm_relative(master_gene_index)
 
-    ggis=_dfarm.copy().set_index('GeneID')['arm'].reindex(master_gene_index).fillna('')
+    ggis=get_arm_vec(master_gene_index)
     chrmatch=torch.tensor((ggis.values[:,None]==ggis.values)&(ggis.values!=''),dtype=torch.bool).to_sparse_coo()
     return chrmatch
 
@@ -208,7 +221,7 @@ def _prep_arm_relative(master_gene_index) :
     _dfarm=cmbi._gi.query('GeneID in @master_gene_index')[['GeneID','Symbol','map_location']].copy()
     _dfarm['arm']=getarm(_dfarm.map_location)
 
-def get_synteny_I(cnaframe,matching_chromosome_tensor,npats,master_gene_index,by='focal',arm_quotient=0.95): 
+def get_synteny_I(cnaframe,matching_chromosome_tensor,npats,master_gene_index,by='focal',arm_quotient=0.95,critical_synteny_quantile=0.9): 
 
     global _dfarm
 
@@ -223,11 +236,23 @@ def get_synteny_I(cnaframe,matching_chromosome_tensor,npats,master_gene_index,by
         if _dfarm is None : 
             _prep_arm_relative(master_gene_index) 
         assert type(master_gene_index) is not type(None)
+
+        # total copy alterations
         localarm=_dfarm.set_index('GeneID').join(cnasum.rename('cna')).reset_index()
+
+        # maximum copy alteration count by arm
         dfagb=localarm.groupby('arm')[['cna']].max().rename(columns=lambda x : x+'_max').reset_index()
+
+        # putting arm max in another columns
         localarm=localarm.merge(dfagb,on='arm',how='left')
+
+        # relative frequency of alteration 
         localarm['quo']=localarm.cna/np.clip(localarm.cna_max,1,np.inf)
-        critical=np.quantile(localarm.cna,0.9)
+
+        # 90th percentile frequency _OVERALL_ for this event
+        # "localarm" is not just this arm
+        critical=np.quantile(localarm.cna,critical_synteny_quantile)
+
         eligible=localarm.query('quo > @arm_quotient and cna > @critical').GeneID.unique()
         ccnat[:,~np.isin(master_gene_index,eligible)]=0.0
     elif by == 'quantile' : 
@@ -258,6 +283,8 @@ def get_cofusion_I(fusframe,npats,master_gene_index) :
 
     return cfust.to_sparse_coo()
 
+    return cfust.to_sparse_coo()
+
 def eightpeetwenty() : 
     return np.intersect1d(cmbi._gi[
                                     cmbi._gi.map_location.str.startswith('8p20') | 
@@ -267,7 +294,7 @@ def eightpeetwenty() :
                                     cmbi._gi.map_location.str.startswith('8p24') 
                                     ].GeneID.unique(),master_gene_index)
 
-def create_sparse_omics(nzomics) : 
+def create_sparse_omics(nzomics,osize) : 
     tindices=np.concatenate([
         np.stack([
             np.ones((len(nzomics[etype][0]),),dtype=int)*x,
@@ -281,6 +308,7 @@ def create_sparse_omics(nzomics) :
     sparse_omics=torch.sparse_coo_tensor(indices=tindices,
                                     values=torch.ones(tindices.shape[1]),
                                     dtype=torch.float32,
+                                    size=(4,osize,tindices[-1].max()+1),
                                    ).coalesce()
     return sparse_omics
 
@@ -442,7 +470,6 @@ def generate_guesser_tensor(*args) :
     return torch.concatenate(tensors+[torch.ones((tensors[0].shape[0],1)),],axis=1).to_sparse_coo()
 
 
-
 def create_guess_weights(I,H,J,synteny_broadcast,sparse_omics,n,normalize_synteny=False) :
     import cansrmapp.cmsolver as cms
     from cansrmapp.utils import _tcast
@@ -490,7 +517,6 @@ def create_guess_weights(I,H,J,synteny_broadcast,sparse_omics,n,normalize_synten
         #lr=1e-3,
         schedule=True,
         optimizer_method='adam',
-        normalize_synteny=normalize_synteny,
     )
 
     slooper_lax=cms.Slooper(solver)
@@ -503,6 +529,12 @@ def create_guess_weights(I,H,J,synteny_broadcast,sparse_omics,n,normalize_synten
 event2eid=lambda c: c.split('_')[0]
 
 if __name__ == '__main__' : 
+
+
+    #print('Numpy:',np.random.get_state())
+    #print('Torch:',torch.get_rng_state())
+    #print('Torch (CUDA):',torch.cuda.get_rng_state())
+    #print('Random:',random.getstate())
 
     if ns.json is not None : 
         with open(ns.json,'r') as f : 
@@ -518,9 +550,9 @@ if __name__ == '__main__' :
             force_zero_path=ns.force_zero_path,
             blacklist_path=ns.blacklist_path,
             spoof_seed=ns.spoof_seed,
-            spoof_smsize=ns.spoof_smsize,
-            signature_sparsity=ns.signature_sparsity,
-            arm_quotient=ns.arm_quotient,
+            spoof_smsize=int(ns.spoof_smsize),
+            signature_sparsity=float(ns.signature_sparsity),
+            arm_quotient=float(ns.arm_quotient),
             normalize_synteny=ns.normalize_synteny,
             )
 
@@ -542,6 +574,13 @@ if __name__ == '__main__' :
     signatures=read_signatures(settings)
     if settings.no_arm_pcs :
         signatures=signatures[signatures.columns[~signatures.columns.str.startswith('arm_pc_')]]
+
+    # as far as I can tell SigProfiler is _not_ handling artifact signatures during table generation
+    # therefore,
+    cols2drop=np.intersect1d(signatures.columns,['CN22','CN23','CN24'])
+    if len(cols2drop) > 0  : 
+        signatures=signatures.drop(columns=cols2drop)
+
     cmu.msg('Done.')
     cmu.msg('Aligning omics and signatures...')
     omics,signatures=align_pandas(omics,signatures,how='intersect')
@@ -554,7 +593,7 @@ if __name__ == '__main__' :
     cmu.msg('Done.')
 
     cmu.msg('Making sparse omics...')
-    sparse_omics=create_sparse_omics(nzomics)
+    sparse_omics=create_sparse_omics(nzomics,osize=len(master_gene_index))
     cmu.msg('Done.')
 
     if settings.force_zero_path is not None  and settings.force_zero_path != '': 
@@ -573,8 +612,20 @@ if __name__ == '__main__' :
     cmu.msg('Creating synteny broadcast...')
     #mct=get_matching_chromosome_tensor(master_gene_index)
     mct=get_matching_arm_tensor(master_gene_index)
-    siup=get_synteny_I(subomics['up'],mct,npats=omics.shape[0],master_gene_index=master_gene_index,arm_quotient=settings.arm_quotient)
-    sidn=get_synteny_I(subomics['dn'],mct,npats=omics.shape[0],master_gene_index=master_gene_index,arm_quotient=settings.arm_quotient)
+    siup=get_synteny_I(subomics['up'],
+                       mct,
+                       npats=omics.shape[0],
+                       master_gene_index=master_gene_index,
+                       arm_quotient=settings.arm_quotient,
+                       critical_synteny_quantile=settings.critical_synteny_quantile)
+
+    sidn=get_synteny_I(subomics['dn'],
+                       mct,
+                       npats=omics.shape[0],
+                       master_gene_index=master_gene_index,
+                       arm_quotient=settings.arm_quotient,
+                       critical_synteny_quantile=settings.critical_synteny_quantile)
+
     sifus=get_cofusion_I(subomics['fus'],npats=omics.shape[0],master_gene_index=master_gene_index)
     #TODO something default option
     synteny_broadcast=create_synteny_broadcast(siup,sidn,sifus)
@@ -603,7 +654,7 @@ if __name__ == '__main__' :
 
     cmu.msg('Preparing guess weights (this can take some time)')
 
-    guessbp=create_guess_weights(I,H,J,synteny_broadcast,sparse_omics,subomics['mut'].shape[0],normalize_synteny=settings.normalize_synteny)
+    #guessbp=create_guess_weights(I,H,J,synteny_broadcast,sparse_omics,subomics['mut'].shape[0],normalize_synteny=settings.normalize_synteny)
 
     cmu.msg('Saving...')
     os.makedirs(settings.output_path,exist_ok=True)
@@ -612,7 +663,7 @@ if __name__ == '__main__' :
     torch.save(J.to_sparse_coo(),opj(settings.output_path,'J.pt'))
     torch.save(sparse_omics,opj(settings.output_path,'sparse_omics.pt'))
     torch.save(synteny_broadcast,opj(settings.output_path,'synteny_broadcast.pt'))
-    torch.save({ k : v.detach().cpu() for k,v in guessbp.items() },opj(settings.output_path,'guessbp.pt'))
+    #torch.save({ k : v.detach().cpu() for k,v in guessbp.items() },opj(settings.output_path,'guessbp.pt'))
 
     np.savez(opj(settings.output_path,'arrays.npz'),gene_index=master_gene_index,sys_index=system_index,sig_index=gb_index)
     cmu.msg('Done.')
