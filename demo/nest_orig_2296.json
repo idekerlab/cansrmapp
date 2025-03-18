@@ -1,12 +1,11 @@
-{
-"omics_path": "../data/omics.csv", 
-"signature_path": "../data/signatures.csv", 
-"sm_path": "../systems_maps/nest.pickle", 
-"blacklist_path": "../data/lowly_expressed_blacklist.pickle", 
-"length_timing_path": "../data/dfrt.hdf", 
-"output_path": "nest_orig_2296", 
-"signature_sparsity": 0.05, 
-"no_arm_pcs": true, 
-"spoof_seed": "orig", 
-"spoof_smsize": 2296
-}
+{"omics_path": "/cellar/users/mrkelly/Data/cansrmapp_project/cohort_rules/tcga_luad/omics_full_doubledown.csv",
+ "signature_path": "/cellar/users/mrkelly/Data/cansrmapp_project/cohort_rules/tcga_luad/signatures_241108.csv",
+ "sm_path": "/cellar/users/mrkelly/Data/cansrmapp_project/src/cansrmapp/systems_maps/nest.pickle",
+ "blacklist_path": "/cellar/users/mrkelly/Data/cansrmapp_project/notebooks/basic_transcript_filter/lowly_expressed_blacklist.pickle",
+ "length_timing_path": "/cellar/users/mrkelly/Data/largesse_paper/notebooks/length_and_timing_calc/dfrt.hdf",
+ "output_path": "nest_orig_2296",
+ "signature_sparsity": 0.05,
+ "critical_synteny_quantile" : 0.8,
+ "no_arm_pcs": true,
+ "spoof_seed": "orig",
+ "spoof_smsize": 2296}
