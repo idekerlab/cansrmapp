@@ -30,7 +30,7 @@ with open('HISTORY.rst') as history_file:
 with open('requirements.txt') as req_file : 
     requirements = [ line.strip() for lin in req_file ]
 
-setup_requirements = [ ]
+setup_requirements = ['wheel']
 
 setup(
     author=author,
