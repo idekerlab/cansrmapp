@@ -1,3 +1,4 @@
+""" Utility functions for CanSRMaPP.  """
 import torch
 import time
 import sys
@@ -6,6 +7,9 @@ from . import DEVICE
 from . import np
 
 def _tcast(arg): 
+    """
+    Cast ``arg`` to tensor on default device. `arg` can be of type `list`, `np.ndarray`, or `torch.tensor`.
+    """
 
     if torch.is_tensor(arg) : 
         if torch.get_device(arg) != DEVICE : 
@@ -20,10 +24,16 @@ def _tcast(arg):
         return torch.tensor(arg,device=DEVICE)
 
 def word_to_seed(word) :
+    """
+    Generate a random seed from `str` `word`, invariant across module instances.
+    """
     import hashlib
     return int(hashlib.shake_128(word.encode()).hexdigest(4),16)
 
 def msg(*args,**kwargs) : 
+    """
+    Writes a basic logging message.
+    """
     if hasattr(builtins,'__IPYTHON__') : 
         clear=False
         if kwargs.get('end') == '\r'  : clear=True
@@ -35,6 +45,27 @@ def msg(*args,**kwargs) :
 
 
 def diag_embed(thetensor,minorly=False) :
+    """
+    Creates a diagonal embedding of sparse_tensor`thetensor`.
+
+    Assuming a vector :math:`v` of length :math:`n`, the diagonal embedding is
+    :math:`I_n \cdot v`. This function extends pattern to multiple dimensions.
+
+    When `minorly=False` (default), embeds the first axis of `thetensor`. If
+    `minorly=True`, embeds the final axis.
+
+
+    Parameters
+    -------
+    thetensor : sparse torch.Tensor.
+        The tensor to be diagonally embedded.
+
+    minorly : bool, default=False
+        Whether the diagonal embedding should use the final axis of `thetensor`. If
+        `False`, (fault), uses the first axis.
+        
+        
+    """
 
     if not minorly :
         use_indices=thetensor.indices()
@@ -304,6 +335,11 @@ def sproing(theflattensor,minor_dims,minorly=False) :
 
 
 def rotate(thetensor) : 
+    """
+    Rotates the dimensions of sparse torch.Tensor `thetensor`. That is, if a tensor has dimensions
+    :math:`(a,b,c,d)`, then this function will return the same tensor with 
+    dmensions math: `(b,c,d,a)`.
+    """
     in_indices=thetensor.indices()
     use_indices=torch.stack([*in_indices[1:],in_indices[0]],axis=0)
     return torch.sparse_coo_tensor(
@@ -312,6 +348,25 @@ def rotate(thetensor) :
             size=(*thetensor.shape[1:],thetensor.shape[0])).coalesce()
 
 def as_directsum(theflattensor,n_blocks,minorly=False) :
+    """
+    Creates the direct sum of sparse two-dimensional tensor `theflattensor`.
+    The intended use case of the function is where an initial,
+    :math:`\ge 2`-dimensional tensor has already been flattened, since handling
+    the flattening interally to this function became confusing quickly. The
+    return value then represents the direct sum of slices of the initial tensor.
+
+    Parameters
+    -------
+    theflattensor : torch.Tensor
+        must be sparse and 2-dimensional
+    n_blocks : int 
+        The number of sub-matrices being directly summed (i.e. the product of
+        dimensions :math:`\ge 2` prior to flattening.
+    n_blocks : bool , default=False
+        If False, (default), the size of the first axis will be preserved. If
+        True, the size of the second (final) axis will be preserved instead.
+
+    """
 
     if minorly : 
         # viz. preserving the minor dimension as is
@@ -329,7 +384,6 @@ def as_directsum(theflattensor,n_blocks,minorly=False) :
             raise ValueError('flat tensor shape incopatible with n blocks; ',theflattensor.shape,n_blocks,key_modulus)
 
 
-
         use_indices=theflattensor.indices().clone()
         blocksize=theflattensor.shape[0]//n_blocks
         out_shape=(theflattensor.shape[0],theflattensor.shape[1]*n_blocks)
@@ -340,7 +394,6 @@ def as_directsum(theflattensor,n_blocks,minorly=False) :
                 indices=use_indices,
                 values=theflattensor.values().clone(),
                 size=out_shape).coalesce() ;
-
 
 
 def bmm(mat1,mat2) :
