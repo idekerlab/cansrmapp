@@ -22,6 +22,7 @@ import random as random
 random.seed(8675309)
 import pandas as pd
 import hashlib
+random=random
 
 
 CPU=torch.device('cpu')
