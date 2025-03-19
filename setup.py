@@ -46,7 +46,7 @@ print(requirements)
 setup(
     author=author,
     author_email=email,
-    python_requires='>3.11.0',
+    python_requires='>=3.11.0',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
