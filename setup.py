@@ -14,6 +14,7 @@ if sys.version_info < (3,11) :
         /usr/bin/env python points to that version)
         before proceeding.
         """)
+    exit()
 
 
 with open(os.path.join('cansrmapp', '__init__.py')) as ver_file:
