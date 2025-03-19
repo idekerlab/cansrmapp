@@ -20,7 +20,7 @@ executing==0.8.3
 fastcluster==1.2.6
 filelock==3.13.1
 fonttools==4.51.0
-gmpy2==2.1.2
+gmpy2
 idna==3.7
 ijson==3.3.0
 imageio==2.36.1
@@ -44,7 +44,7 @@ matplotlib-inline==0.1.6
 matplotlib-venn==1.1.1
 mkl_fft==1.3.11
 mkl_random==1.2.8
-mkl-service==2.4.0
+mkl-service==2.4.1
 mpmath==1.3.0
 ndex2==3.9.0
 nest-asyncio==1.6.0
@@ -59,7 +59,6 @@ parso==0.8.3
 patsy==0.5.6
 pexpect==4.8.0
 pillow==10.4.0
-pip==24.2
 platformdirs==3.10.0
 ply==3.11
 prettytable==3.12.0
@@ -93,7 +92,7 @@ six==1.16.0
 sqids==0.5.0
 stack-data==0.2.0
 statsmodels==0.14.2
-sympy==1.13.2
+sympy==1.13.1
 tables==3.10.1
 threadpoolctl==3.5.0
 tifffile==2024.9.20
