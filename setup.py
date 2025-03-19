@@ -54,7 +54,8 @@ setup(
         'Programming Language :: Python :: 3.11'
     ],
     description=desc,
-    install_requires=requirements,
+    requirements=requirements,
+    #install_requires=requirements,
     license="BSD license",
     long_description=readme + '\n\n' + history,
     long_description_content_type='text/x-rst',
