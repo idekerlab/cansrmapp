@@ -5,6 +5,15 @@
 import os
 import re
 from setuptools import setup, find_packages
+import sys
+
+if sys.version_info < (3,11) :
+    print("""
+        CanSRMaPP requires Python 3.11
+        Isntall Python 3.11 (and set up your environment such that 
+        /usr/bin/env python points to that version)
+        before proceeding.
+        """)
 
 
 with open(os.path.join('cansrmapp', '__init__.py')) as ver_file:
