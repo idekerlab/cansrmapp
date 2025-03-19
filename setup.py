@@ -41,6 +41,7 @@ with open('requirements.txt') as req_file :
     requirements = [ line.strip() for lin in req_file ]
 
 setup_requirements = ['wheel']
+print(requirements)
 
 setup(
     author=author,
