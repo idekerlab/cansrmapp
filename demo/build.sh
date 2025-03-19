@@ -1,7 +1,7 @@
 #!/bin/zsh
 python3 ../cansrmapp/cmbuilder.py \
---omics_path ../data/omics.csv \
---signature_path ../data/signatures.csv \
+--omics_path ../data/omics.csv.gz \
+--signature_path ../data/signatures.csv.gz \
 --sm_path ../systems_maps/nest.pickle \
 --blacklist_path ../data/lowly_expressed_blacklist.pickle \
 --length_timing_path ../data/length_and_timing.hdf \
