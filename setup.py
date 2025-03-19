@@ -63,7 +63,7 @@ setup(
     name='cansrmapp',
     packages=find_packages(include=['cansrmapp']),
     package_dir={'cansrmapp': 'cansrmapp'},
-    scripts=[ 'cansrmapp/cansrmappcmd.py'],
+    scripts=[],
     setup_requires=setup_requirements,
 
     url=repo_url,
