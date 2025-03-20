@@ -1,10 +1,9 @@
-from . import pd,np
-
+from . import pd,np 
 #GENEINFOPATH='/cellar/users/mrkelly/Data/cansrmapp_project/src/cansrmapp/bioinfo_redistributed/Homo_sapiens_241103.gene_info'
 #GFFPATH='/cellar/users/mrkelly/Data/cansrmapp_project/src/cansrmapp/bioinfo_redistributed/gff_reduced.gff.gz'
 GENEINFOPATH='/cellar/users/mrkelly/Data/cansrmapp_project/src/cansrmapp/cansrmapp/bioinfo_redistributed/Homo_sapiens_241103.gene_info'
-GFFPATH='/cellar/users/mrkelly/Data/cansrmapp_project/src/cansrmapp/cansrmapp/bioinfo_redistributed/gff_reduced.gff.gz'
-
+GENEINFOPATH='./bioinfo_redistributed/Homo_sapiens_241103.gene_info'
+GFFPATH='./bioinfo_redistributed/gff_reduced.gff.gz'
 _gi=None
 _s2e=None
 _e2s=None
