@@ -91,6 +91,9 @@ SYSTEM_LIMIT_LOWER=4
 
 @dataclass(kw_only=True)
 class BuilderSettings(object) : 
+    """
+    Holds configuration details for building CanSRMaPP model tensors.
+    """
     omics_path : str
     signature_path : str
     length_timing_path : str
@@ -108,6 +111,15 @@ class BuilderSettings(object) :
     
 
 def read_omics(a) :
+    """
+    Reads an omics file.
+
+    Parameters
+    -----
+    a   : cansrmapp.cmbuilder.BuilderSettings or str
+        If a str, is interpreted as a file path. If BuilderSettings,
+        reads from the file path at a.omics_path
+    """
     if type(a) == str :
         return pd.read_csv(a,index_col=0)
     if type(a) == BuilderSettings :
@@ -115,12 +127,32 @@ def read_omics(a) :
     raise ValueError("a should be either a string(=file path) or a BuilderSettings object")
 
 def read_signatures(a) :
+
+    """
+    Reads a signatures file.
+
+    Parameters
+    -----
+    a   : cansrmapp.cmbuilder.BuilderSettings or str
+        If a str, is interpreted as a file path. If BuilderSettings,
+        reads from the file path at a.omics_path
+    """
+
     sigframe=pd.read_csv(a.signature_path,index_col=0)
     sigframe=sigframe[ sigframe.columns[(sigframe>0).sum(axis=0) > a.signature_sparsity*sigframe.shape[0]]]
     return sigframe
     #raise ValueError("a should be either a  a BuilderSettings object")
 
 def get_valid_gene_ids(blacklist=None) :
+    """
+    Gets a list of valid gene identifiers (Entrez Ids)
+
+    Parameters
+    -----
+    blacklist  : str or None (default)
+        If a str, is interpreted as a file path containing as set of 
+        pickled entrez IDs to be exluded from consideration.
+    """
     if blacklist is None : blacklist=set()
     cmbi.boot_bioinfo()
     return cmbi._gi[
@@ -130,6 +162,15 @@ def get_valid_gene_ids(blacklist=None) :
 
 
 def read_length_timing(a,master_gene_index=None) : 
+    """
+    Gets a list of valid gene identifiers (Entrez Ids)
+
+    Parameters
+    -----
+    blacklist  : str or None (default)
+        If a str, is interpreted as a file path containing as set of 
+        pickled entrez IDs to be exluded from consideration.
+    """
     if type(a) == str : length_timing_path =a
     if type(a) == BuilderSettings : length_timing_path=a.length_timing_path
 
@@ -145,6 +186,17 @@ def read_length_timing(a,master_gene_index=None) :
     return lengths,timings
 
 def align_pandas(*args,how='intersect') :
+    """
+    Helper function to align multiple dataframes by their indices
+
+    Parameters
+    -----
+    args : 
+        pandas DataFrames
+
+    how  : str, default='intersect'
+        dictates the operation to be used for 
+    """
     if how == 'intersect'  :
         joint_index=reduce(np.intersect1d,[a.index for a in args])
     elif how == 'union'  : 
