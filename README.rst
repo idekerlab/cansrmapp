@@ -66,9 +66,12 @@ To fit CanSRMaPP models, two scripts are provided in `demo/`; the simplest invoc
 
     cd demo
     ./build.sh
-    ./solve.sh
+    ./test-solve.sh
 
-`build.sh` creates the CanSRMaPP input matrices; `solve.sh` solves them.
+`build.sh` creates the CanSRMaPP input matrices; `test-solve.sh` solves them. In the
+interest of low runtime and debugging, some parameters in `test-solve.sh` have been
+set such that they may not converge on optimal solutions; those in `full-solve.sh`
+are set to produce an optimal solution.
 
 .. note::
    Anecdotally, you can expect a single cycle of `cmsolver` to take

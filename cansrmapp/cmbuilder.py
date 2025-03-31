@@ -133,9 +133,14 @@ def read_signatures(a) :
 
     Parameters
     -----
-    a   : cansrmapp.cmbuilder.BuilderSettings or str
-        If a str, is interpreted as a file path. If BuilderSettings,
-        reads from the file path at a.omics_path
+    a   : cansrmapp.cmbuilder.BuilderSettings
+        Reads from the file path at a.omics_path, enforcing
+        that all columns are represented by more than a.signature_sparsity
+        of patients
+
+    Returns
+    -----
+    sigframe : pandas.DataFrame. Rows are sample identifiers, columns are signature names.
     """
 
     sigframe=pd.read_csv(a.signature_path,index_col=0)
@@ -152,6 +157,12 @@ def get_valid_gene_ids(blacklist=None) :
     blacklist  : str or None (default)
         If a str, is interpreted as a file path containing as set of 
         pickled entrez IDs to be exluded from consideration.
+
+
+    Returns
+    ------
+    valid_gene_ids : numpy.NDArray[str] containing valid Entrez gene IDs.
+        
     """
     if blacklist is None : blacklist=set()
     cmbi.boot_bioinfo()
@@ -170,6 +181,15 @@ def read_length_timing(a,master_gene_index=None) :
     blacklist  : str or None (default)
         If a str, is interpreted as a file path containing as set of 
         pickled entrez IDs to be exluded from consideration.
+
+
+    Returns
+    -----
+    lengths :
+        pandas Series of protein lengths
+    timings :
+        pandas Series of relative replication timings
+
     """
     if type(a) == str : length_timing_path =a
     if type(a) == BuilderSettings : length_timing_path=a.length_timing_path
@@ -195,7 +215,15 @@ def align_pandas(*args,how='intersect') :
         pandas DataFrames
 
     how  : str, default='intersect'
-        dictates the operation to be used for 
+        dictates the operation to be used for alignment; 
+        either 'intersect' or 'union'
+
+
+    Returns
+    ----
+
+    Tuple containing the reconciled indices
+
     """
     if how == 'intersect'  :
         joint_index=reduce(np.intersect1d,[a.index for a in args])
@@ -237,7 +265,6 @@ def omics_to_nonzeros(omics_frame,valid_gene_ids,coerce_ids=False):
 
     return master_gene_index,nzomics,subomics
 
-#DEPREC
 def get_matching_chromosome_tensor(master_gene_index) : 
     cmbi.boot_gff()
     ggis=cmbi._gff.copy().set_index('GeneID')['chromosome'].reindex(master_gene_index).fillna('')
