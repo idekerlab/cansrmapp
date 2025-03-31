@@ -34,6 +34,15 @@ Compatibility
 -------------
 
 * Python 3.11+
+* CUDA 12.1 _only_ 
+
+.. note::
+   CUDA is only required for implementations using GPUs;
+   feel free to ignore if not using GPU.
+
+   The root CanSRMaPP module automatically detects whether CUDA is set up;
+   `cmbuilder` and in particular `cmsolver` will configure themselves to use
+   the GPU if available.
 
 Installation
 ------------
@@ -46,11 +55,28 @@ Installation
    pip install dist/cansrmapp*whl
 
 
-
 Usage
 ----------
 
-A minimal working 
+Basic usage / code test
+~~~~~~~
+
+To fit CanSRMaPP models, two scripts are provided in `demo/`; the simplest invocation is
+.. code-block::
+
+    cd demo
+    ./build.sh
+    ./solve.sh
+
+`build.sh` creates the CanSRMaPP input matrices; `solve.sh` solves them.
+
+.. note::
+   Anecdotally, you can expect a single cycle of `cmsolver` to take
+   about 1 minute on a GPU and up to 20 minutes when parallelized
+   over multiple CPUs. Parallelization largely takes place from
+   backends handled by `numpy`, `scipy`, and `pytorch`, so if 
+   you wish to limit parallelization, follow their advice for 
+   setting environment variables.
 
 
 =======
