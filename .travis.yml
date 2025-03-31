@@ -13,8 +13,9 @@ install:
 
 # Command to run tests, e.g. python setup.py test
 script:
-    - coverage run --source cansrmapp -m unittest discover
+    #- coverage run --source cansrmapp -m unittest discover
+    - cd demo && ./build.sh && ./test-solve.sh
 
-after_success: coveralls
+#after_success: coveralls
 
     
