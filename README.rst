@@ -36,7 +36,7 @@ Compatibility
 * Python 3.11+
 * CUDA 12.1 _only_ 
 
-.. note::
+   **Note**
    CUDA is only required for implementations using GPUs;
    feel free to ignore if not using GPU.
 
@@ -73,7 +73,7 @@ interest of low runtime and debugging, some parameters in `test-solve.sh` have b
 set such that they may not converge on optimal solutions; those in `full-solve.sh`
 are set to produce an optimal solution.
 
-.. note::
+   **Note**
    Anecdotally, you can expect a single cycle of `cmsolver` to take
    about 1 minute on a GPU and up to 20 minutes when parallelized
    over multiple CPUs. Parallelization largely takes place from
