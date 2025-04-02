@@ -73,13 +73,13 @@ interest of low runtime and debugging, some parameters in `test-solve.sh` have b
 set such that they may not converge on optimal solutions; those in `full-solve.sh`
 are set to produce an optimal solution.
 
-   **Note**
-   Anecdotally, you can expect a single cycle of `cmsolver` to take
-   about 1 minute on a GPU and up to 20 minutes when parallelized
-   over multiple CPUs. Parallelization largely takes place from
-   backends handled by `numpy`, `scipy`, and `pytorch`, so if 
-   you wish to limit parallelization, follow their advice for 
-   setting environment variables.
+**Note**
+  Anecdotally, you can expect a single cycle of `cmsolver` to take
+  about 1 minute on a GPU and up to 20 minutes when parallelized
+  over multiple CPUs. Parallelization largely takes place from
+  backends handled by `numpy`, `scipy`, and `pytorch`, so if 
+  you wish to limit parallelization, follow their advice for 
+  setting environment variables.
 
 
 =======
