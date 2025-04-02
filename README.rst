@@ -36,7 +36,7 @@ Compatibility
 * Python 3.11+
 * CUDA 12.1 _only_ 
 
-   **Note**
+**Note**
    CUDA is only required for implementations using GPUs;
    feel free to ignore if not using GPU.
 
