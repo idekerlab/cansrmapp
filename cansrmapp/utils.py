@@ -140,19 +140,19 @@ def _fix_overlong_identifiers(df,index=True) :
 
     return df
 
-def regularize_cc(ccmat,n,correlation_p=1e-3) : 
-    """
-    Takes a correlation matrix (numpy ndarray) and zeroes
-    out correlations with p-values less significant than <correlation_p>
-    """
-    from scioy.stats.distributions import t
-    tstats=ccmat*np.sqrt(n-2)/np.sqrt(1-ccmat*ccmat)
-    tthresh=t.isf(correlation_p,df=n-2)
-    sigmask=tstats > tthresh
-    out=ccmat.copy()
-    out[ ~sigmask ]=0
-    
-    return out
+####def regularize_cc(ccmat,n,correlation_p=1e-3) : 
+####    """
+####    Takes a correlation matrix (numpy ndarray) and zeroes
+####    out correlations with p-values less significant than <correlation_p>
+####    """
+####    from scipy.stats.distributions import t
+####    tstats=ccmat*np.sqrt(n-2)/np.sqrt(1-ccmat*ccmat)
+####    tthresh=t.isf(correlation_p,df=n-2)
+####    sigmask=tstats > tthresh
+####    out=ccmat.copy()
+####    out[ ~sigmask ]=0
+####    
+####    return out
 
 def regularize_cc_torch(ccten,n,correlation_p=1e-3) : 
     """

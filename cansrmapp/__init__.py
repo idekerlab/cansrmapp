@@ -9,7 +9,15 @@ __repo_url__ = 'https://github.com/idekerlab/cansrmapp'
 __description__ = 'Mark please fill this out'
 __computation_name__ = 'Ignore me'
 
-import torch
+import os
+try: 
+    import torch
+except ImportError as e :
+    #os.environ['LD_LIBRARY_PATH']=''
+    print('This is likely a known issue, {}'.format(r'https://github.com/pytorch/pytorch/issues/111469'))
+    raise(e)
+    
+
 if torch.cuda.is_available():
     torch.backends.cudnn.deterministic=True
     torch.backends.cudnn.benchmark=False
