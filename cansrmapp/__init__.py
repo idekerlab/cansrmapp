@@ -15,6 +15,7 @@ try:
 except ImportError as e :
     #os.environ['LD_LIBRARY_PATH']=''
     print('This is likely a known issue, {}'.format(r'https://github.com/pytorch/pytorch/issues/111469'))
+    print('A likely fix is to first use `unset LD_LIBRARY_PATH`.')
     raise(e)
     
 
