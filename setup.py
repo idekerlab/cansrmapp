@@ -40,13 +40,13 @@ with open('HISTORY.rst') as history_file:
 
 requirements = ['torch>=2.5.0,<2.7.0',
                 'torchvision>=0.20.0',
-                'matplotlib>=3.9.2',
-                'numpy>=1.26.4',
-                'pandas>=2.2.2',
-                'tables>=3.8.0',
-                'scikit-image>=0.24.0',
-                'scikit-learn>=1.5.2',
-                'scipy>=1.13.1']
+                'matplotlib>=3.9.2,<4.0.0',
+                'numpy>=1.26.4,<2.0.0',
+                'pandas>=2.2.2,<2.3.0',
+                'tables>=3.8.0,<4.0.0',
+                'scikit-image>=0.24.0,<1.0.0',
+                'scikit-learn>=1.5.2,<2.0.0',
+                'scipy>=1.13.1,<2.0.0']
 
 setup_requirements = ['wheel']
 
