@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 python3 ../cansrmapp/cmbuilder.py \
 --omics_path ../data/omics.csv.gz \
 --signature_path ../data/signatures.csv.gz \
@@ -11,4 +11,4 @@ python3 ../cansrmapp/cmbuilder.py \
 --no_arm_pcs  \
 --spoof_seed orig \
 --spoof_smsize 2296
-                                     
+

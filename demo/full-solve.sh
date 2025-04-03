@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 python3 ../cansrmapp/cmsolver.py \
 --lambda_selection 3.0  \
 --lambda_gb 1.0 \
@@ -6,4 +6,4 @@ python3 ../cansrmapp/cmsolver.py \
 --indir nest \
 --outdir model \
 --n_cycles 5 \
---n_chains 4  
+--n_chains 4
