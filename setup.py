@@ -10,7 +10,7 @@ import sys
 if sys.version_info < (3,11) :
     print("""
         CanSRMaPP requires Python 3.11
-        Isntall Python 3.11 (and set up your environment such that 
+        Isntall Python 3.11 (and set up your environment such that
         /usr/bin/env python points to that version)
         before proceeding.
         """)
@@ -37,11 +37,18 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-with open('requirements.txt') as req_file : 
-    requirements = [ line.strip() for line in req_file ]
+
+requirements = ['torch>=2.5.0,<2.7.0',
+                'torchvision',
+                'matplotlib',
+                'numpy',
+                'pandas',
+                'tables>=3.8.0',
+                'scikit-image',
+                'scikit-learn',
+                'scipy']
 
 setup_requirements = ['wheel']
-print(requirements)
 
 setup(
     author=author,
