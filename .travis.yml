@@ -15,6 +15,9 @@ script:
     #- coverage run --source cansrmapp -m unittest discover
     - cd demo && sh build.sh && sh test-solve.sh
 
+vm : 
+    size : large
+
 #after_success: coveralls
 
     

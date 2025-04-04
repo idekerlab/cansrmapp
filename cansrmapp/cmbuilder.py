@@ -479,7 +479,7 @@ def sm_to_tensor(systems_map_dict,system_index,master_gene_index) :
         v=systems_map_dict[k]
         nzc.extend([nsargs]*len(v))
         nzi.extend([ glookup.get(nvg) for nvg in v ])
-        nzv.extend([ 1/np.sqrt(np.cast['float'](len(v))/float(SYSTEM_LIMIT_LOWER))]*len(v))
+        nzv.extend([ 1/np.sqrt(float(len(v))/float(SYSTEM_LIMIT_LOWER))]*len(v))
         nsargs +=1 
 
     H=np.zeros((len(master_gene_index),len(system_index)),dtype=np.float32)
