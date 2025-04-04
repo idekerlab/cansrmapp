@@ -8,6 +8,8 @@ python:
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
+    - pip install -r requirements.txt
+    - pip install -r requirements_dev.txt
     - make dist && pip install dist/*whl
 
 # Command to run tests, e.g. python setup.py test
@@ -15,9 +17,9 @@ script:
     #- coverage run --source cansrmapp -m unittest discover
     - cd demo && sh build.sh && sh test-solve.sh
 
-vm : 
+vm :
     size : large
 
 #after_success: coveralls
 
-    
+
