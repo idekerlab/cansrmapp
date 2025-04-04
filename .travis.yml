@@ -18,7 +18,7 @@ script:
     - cd demo && sh build.sh && sh test-solve.sh
 
 vm :
-    size : large
+    size : x-large
 
 #after_success: coveralls
 
