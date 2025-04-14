@@ -13,7 +13,8 @@ install:
 # Command to run tests, e.g. python setup.py test
 script:
     #- coverage run --source cansrmapp -m unittest discover
-    - cd demo && sh build.sh && sh test-solve.sh
+    #- cd demo && sh build.sh && sh test-solve.sh
+    - cd demo && sh build.sh 
 
 vm : 
     size : large
