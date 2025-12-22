@@ -160,7 +160,8 @@ def regularize_cc_torch(ccten,n,correlation_p=1e-3) :
     out correlations with p-values less significant than <correlation_p>
     """
     from scipy.stats.distributions import t
-    tstats=ccten*torch.sqrt(torch.tensor(n,device=ccten.device)-2)/torch.sqrt(1-ccten*ccten)
+    #tstats=ccten*torch.sqrt(torch.tensor(n,device=ccten.device)-2)/torch.sqrt(1-ccten*ccten)
+    tstats=ccten*torch.sqrt(_tcast(n).detach().to(ccten.device)-2)/torch.sqrt(1-ccten*ccten)
     tthresh=t.isf(correlation_p,df=n-2)
     sigmask=tstats > tthresh
     out=ccten.clone()
