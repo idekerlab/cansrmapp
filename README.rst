@@ -19,7 +19,6 @@ cansrmapp
 CanSRMaPP is a modeling tool for identifying a minimal feature set describing the
 metagenome of a cancer cohort.
 
-
 * Free software: BSD license
 * Source code: https://github.com/idekerlab/cansrmapp
 
@@ -41,8 +40,9 @@ Compatibility
 -------------
 
 * Python 3.11+
-* CUDA 12.1 _only_ if using GPU
+* CUDA 12.1 if using GPU. Download the appropriate CUDA toolkit for your system `here`_ :
 
+.. _here: https://developer.nvidia.com/cuda-12-1-1-download-archive
 
 
 
@@ -54,22 +54,17 @@ Compatibility
    `cmbuilder` and in particular `cmsolver` will configure themselves to use
    the GPU if available.
 
+
 Installation
 ------------
 
 Anaconda environment
 ~~~~~~~~~~~~~~~~~~~~~~
 
-This tool depends on `PyTorch <https://pytorch.org>`__ and the easiest way to get a
-clean installation is via `Anaconda <https://anaconda.io>`__
-
 .. code-block::
 
     conda create -n cansrmapp python=3.11 -y
     conda activate cansrmapp
-
-    # install pytorch
-    conda install pytorch torchvision -c pytorch
 
 Building and installing cansrmapp package
 
@@ -89,6 +84,7 @@ Basic usage / code test
 ~~~~~~~
 
 To fit CanSRMaPP models, two scripts are provided in `demo/`; the simplest invocation is
+
 .. code-block::
 
     cd demo
@@ -97,20 +93,21 @@ To fit CanSRMaPP models, two scripts are provided in `demo/`; the simplest invoc
     ./polish.sh
 
 `build.sh`
-creates the CanSRMaPP input matrices
+    :   creates the CanSRMaPP input matrices
 `test-solve.sh`
-Finds the maximum-posterior solution for the input matrices.In the
-interest of low runtime and debugging, some parameters in `test-solve.sh` have been
-set such that they may not converge on optimal solutions; those in `full-solve.sh`
-are set to produce an optimal solution.
+    :   Finds the maximum-posterior solution for the input matrices.In the
+        interest of low runtime and debugging, some parameters in `test-solve.sh` have been
+        set such that they may not converge on optimal solutions; those in `full-solve.sh`
+        are set to produce an optimal solution.
 `polish.sh` 
-        Puts the results in a more interpretable format; work will continue on improving
+    :   Puts the results in a more interpretable format; work will continue on improving
         presentation.
-                `feature_summary.csv` contains the Maximum a Posteriori (MAP) estimate of 
-                each input feature along with that feature's type (gene, signature, or genomic background),
-                and its name.
-                `selected_events_boolean.csv` contains true/false values for a simple selection test on
-                each alteration type (column) and each gene (row).
+
+`feature_summary.csv` contains the Maximum a Posteriori (MAP) estimate of 
+each input feature along with that feature's type (gene, signature, or genomic background),
+and its name.
+`selected_events_boolean.csv` contains true/false values for a simple selection test on
+each alteration type (column) and each gene (row).
 
 **Note**
   Anecdotally, you can expect a single cycle of `cmsolver` to take

@@ -19,7 +19,7 @@ os.environ['CUDA_LAUNCH_BLOCKING']='1'
 opj=os.path.join
 
 import builtins
-print(hasattr(builtins,'__IPYTHON__'))
+#print(hasattr(builtins,'__IPYTHON__'))
 import cansrmapp
 import cansrmapp.utils as cmu
 from cansrmapp import DEVICE,np,torch,random,summarize_random_states
