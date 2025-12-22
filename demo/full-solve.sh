@@ -1,4 +1,10 @@
 #!/bin/bash
+
+if [ -a model ]
+then
+    rm -rf model
+fi
+
 python3 ../cansrmapp/cmsolver.py \
 --lambda_selection 3.0  \
 --lambda_gb 1.0 \

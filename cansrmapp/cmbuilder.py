@@ -12,8 +12,7 @@ if __name__ == '__main__'  :
     parser.add_argument('--length_timing_path',action='store',help='file path of length/timing hdf',required=False)
     parser.add_argument('--output_path',action='store',help='directory in which to store output (will be created if necessary)',default='.')
     parser.add_argument('--sm_path',action='store',help='file path of systems map .pickle',required=False)
-    parser.add_argument('--no_arm_pcs',action='store_true',help='if selected, arm pc features will not be incorporated',default=False)
-    parser.add_argument('--signature_sparsity',action='store',help='minimum portion of patients with signature activity for signature incorporation',default=0.0)
+    parser.add_argument('--signature_sparsity',action='store',help='minimum portion of patients with signature activity for signature incorporation',default=0.05)
     parser.add_argument('--spoof_seed',
                             required=False,
                             action='store',
@@ -101,7 +100,7 @@ class BuilderSettings(object) :
     sm_path : str = ''
     force_zero_path : str = ''
     blacklist_path : str = ''
-    no_arm_pcs : bool=False
+    no_arm_pcs : bool=True
     signature_sparsity : float=0.0
     spoof_seed : typing.Union[str,int] = 'orig'
     spoof_smsize : int=-1
@@ -624,7 +623,6 @@ if __name__ == '__main__' :
             signature_path=ns.signature_path,
             length_timing_path=ns.length_timing_path,
             output_path=ns.output_path,
-            no_arm_pcs=ns.no_arm_pcs,
             sm_path=ns.sm_path,
             force_zero_path=ns.force_zero_path,
             blacklist_path=ns.blacklist_path,

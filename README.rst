@@ -93,21 +93,23 @@ To fit CanSRMaPP models, two scripts are provided in `demo/`; the simplest invoc
     ./polish.sh
 
 `build.sh`
-    :   creates the CanSRMaPP input matrices
+    creates the CanSRMaPP input matrices
 `test-solve.sh`
-    :   Finds the maximum-posterior solution for the input matrices.In the
-        interest of low runtime and debugging, some parameters in `test-solve.sh` have been
-        set such that they may not converge on optimal solutions; those in `full-solve.sh`
-        are set to produce an optimal solution.
+    Finds the maximum-posterior solution for the input matrices.In the
+    interest of low runtime and debugging, some parameters in `test-solve.sh` have been
+    set such that they may not converge on optimal solutions; those in `full-solve.sh`
+    are set to produce an optimal solution.
 `polish.sh` 
-    :   Puts the results in a more interpretable format; work will continue on improving
-        presentation.
+    Puts the results in a more interpretable format; work will continue on improving
+    presentation.
 
-`feature_summary.csv` contains the Maximum a Posteriori (MAP) estimate of 
-each input feature along with that feature's type (gene, signature, or genomic background),
-and its name.
-`selected_events_boolean.csv` contains true/false values for a simple selection test on
-each alteration type (column) and each gene (row).
+`feature_summary.csv`
+    contains the Maximum a Posteriori (MAP) estimate of 
+    each input feature along with that feature's type (gene, signature, or genomic background),
+    and its name.
+`selected_events_boolean.csv`
+    contains true/false values for a simple selection test on
+    each alteration type (column) and each gene (row).
 
 **Note**
   Anecdotally, you can expect a single cycle of `cmsolver` to take
