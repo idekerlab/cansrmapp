@@ -3,25 +3,25 @@ cansrmapp
 =========
 
 
-|a| |b| |c|
-
-.. |a| image:: https://img.shields.io/pypi/v/cansrmapp.svg
-        :target: https://pypi.python.org/pypi/cansrmapp
+|b| 
 
 .. |b| image:: https://app.travis-ci.com/idekerlab/cansrmapp.svg
         :target: https://app.travis-ci.com/idekerlab/cansrmapp
 
-.. |c| image:: https://readthedocs.org/projects/cansrmapp/badge/?version=latest
+.. .. |a| |b| |c|
+   .. |a| image:: https://img.shields.io/pypi/v/cansrmapp.svg
+        :target: https://pypi.python.org/pypi/cansrmapp
+   .. |b| image:: https://app.travis-ci.com/idekerlab/cansrmapp.svg
+        :target: https://app.travis-ci.com/idekerlab/cansrmapp
+   .. |c| image:: https://readthedocs.org/projects/cansrmapp/badge/?version=latest
         :target: https://cansrmapp.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
-
 
 CanSRMaPP is a modeling tool for identifying a minimal feature set describing the
 metagenome of a cancer cohort.
 
 * Free software: BSD license
 * Source code: https://github.com/idekerlab/cansrmapp
-
 
 Dependencies
 ------------
@@ -40,15 +40,11 @@ Compatibility
 -------------
 
 * Python 3.11+
-* CUDA 12.1 if using GPU. Download the appropriate CUDA toolkit for your system `here`_ :
-
-.. _here: https://developer.nvidia.com/cuda-12-1-1-download-archive
-
-
+* CUDA 12.1 if using GPU. Download the appropriate CUDA toolkit for your system `here <https://developer.nvidia.com/cuda-12-1-1-download-archive>` :
 
 **Note**
-   CUDA is only required for implementations using GPUs;
-   feel free to ignore if not using GPU.
+   CUDA is only required for implementations using NVIDIA GPUs;
+   feel free to ignore otherwise.
 
    The root CanSRMaPP module automatically detects whether CUDA is set up;
    `cmbuilder` and in particular `cmsolver` will configure themselves to use
@@ -59,7 +55,7 @@ Installation
 ------------
 
 Anaconda environment
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
 
@@ -76,16 +72,16 @@ Building and installing cansrmapp package
    make dist
    pip install dist/cansrmapp*whl
 
-
 Usage
 ----------
 
 Basic usage / code test
-~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
-To fit CanSRMaPP models, two scripts are provided in `demo/`; the simplest invocation is
+To fit CanSRMaPP models, scripts are provided in `demo/`.
+A simple test invocation (<5 minutes) is : 
 
-.. code-block::
+.. code-block:: bash
 
     cd demo
     ./build.sh
@@ -114,18 +110,53 @@ To fit CanSRMaPP models, two scripts are provided in `demo/`; the simplest invoc
         contains true/false values for a simple selection test on
         each alteration type (column) and each gene (row).
 
+To reproduce the core CanSRMaPP workflow (~30 minutes): 
+
+.. code-block:: bash
+
+    cd demo
+    ./build.sh
+    ./full-solve.sh
+    ./polish.sh
+    ./validate.sh
+
+Output for the **final** command should resemble : 
+
+.. code-block:: 
+
+    Feature weight agreement with publication (pearson)
+    PearsonRResult(statistic=0.9999972289807557, pvalue=0.0)
+    Feature identification agreement with publication (jaccard,differences)
+              Local run           |         Publication          
+    -------------------------------------------------------------
+           only        |       common       |       only        
+             0         |         90         |         0         
+
+    ============================================================
+    Detected GPU.
+    TCGA-LUAD [training] frequency agreement (pearson) :
+    PearsonRResult(statistic=0.9750266, pvalue=0.0)
+    TCGA-CPTAC [evaluation] frequency agreement (pearson) :
+    PearsonRResult(statistic=0.89953285, pvalue=0.0)
+
+Indicating that the 90 CanSRMaPP features are those recovered by the authors,
+and that their deviation from the authors' values is less than one part in
+10\ :sup:`5`. 
+
 **Note**
   Anecdotally, you can expect a single cycle of `cmsolver` to take
   about 70 seconds on a GPU and up to 20 minutes when parallelized
-  over multiple CPUs; GPU runtime may be slower on WSL.
+  over multiple CPUs; GPU runtime may be slower on WSL. ``test-solve.sh``
+  runs for one cycle, while ``full-solve.sh`` runs for twenty.
+
   Parallelization largely takes place from
   backends handled by `numpy`, `scipy`, and `pytorch`, so if
-  you wish to limit parallelization, follow their advice for
-  setting environment variables.
+  you wish to limit parallelization, follow procedures
+  relevant to those modules for setting environment variables.
 
-=======
+==========================
 Redistributed data sources
-=======
+==========================
 
 CanSRMaPP relies on a number of third-party files for reference and reconciling
 multiple data sources. This document describes the provenance of all such files,
@@ -153,9 +184,7 @@ Gene Info
 
 ``Homo_sapiens.gene_info`` was downloaded from
 `<https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz>`_ on
-November 3, 2024. This file is unrestricted as described `here`_
-
-.. _here: https://ftp.ncbi.nlm.nih.gov/README.ftp>
+November 3, 2024. This file is unrestricted as described `here <https://ftp.ncbi.nlm.nih.gov/README.ftp>`_
 
 GRCh38 genomic annotation
 -------------------------
@@ -163,6 +192,7 @@ GRCh38 genomic annotation
 ``GCF_000001405.40_GRCh38.p14_genomic.gff.gz`` was downloaded from `this FTP directory`_ on November 12, 2024.
 This file is unrestricted as described `according to these terms`_
 The reduced file `gff_reduced.gff.gz` derived from this one is the result of running the command  ::
+
         gunzip -c GCF_000001405.40_GRCh38.p14_genomic.gff.gz | awk -F'     ' '$0 !~ /^#/ && $3 == "gene" && $9 ~/GeneID/ ' | gzip -c > gff_reduced.gff.gz
 
 .. _this ftp directory: https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Homo_sapiens/latest_assembly_versions/GCF_000001405.40_GRCh38.p14/
@@ -180,10 +210,6 @@ file are named ``Clusterx-y``, an additional file, ``NeST_map_1.5_default_node_N
 is incorporated to map these to their NEST IDs as published.
 
 .. _Zheng, Kelly, et al., 2021: https://doi.org/10.1126/science.abf3067
-
-
-
-
 
 Credits
 -------
