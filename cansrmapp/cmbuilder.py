@@ -81,8 +81,7 @@ from functools import reduce
 
 opj=os.path.join
 
-ETYPES=('mut',
-'fus','up','dn')
+ETYPES=('mut', 'fus','up','dn','delta')
 
 SYSTEM_LIMIT_UPPER=257
 SYSTEM_LIMIT_LOWER=4
@@ -107,6 +106,9 @@ class BuilderSettings(object) :
     arm_quotient : float=0.95
     critical_synteny_quantile : float=0.80
     normalize_synteny : bool=False
+    delta_normal_maximum : float=3.9999
+    delta_normal_minimum : float=-1.0
+    
     
 
 def read_omics(a) :
@@ -122,7 +124,7 @@ def read_omics(a) :
     if type(a) == str :
         return pd.read_csv(a,index_col=0)
     if type(a) == BuilderSettings :
-        return pd.read_csv(a.omics_path,index_col=0)
+        return pd.read_csv(a.omics_path,index_col=0,low_memory=False)
     raise ValueError("a should be either a string(=file path) or a BuilderSettings object")
 
 def read_signatures(a) :
@@ -245,12 +247,34 @@ def read_eidpickle(pickle_file_path) :
     with open(pickle_file_path,'rb') as f : 
         return pickle.load(f)
 
-def omics_to_nonzeros(omics_frame,valid_gene_ids,coerce_ids=False): 
+def omics_to_nonzeros(omics_frame,valid_gene_ids,coerce_ids=False,delta_normal_maximum=3.9999,delta_normal_minimum=-1): 
     o2=omics_frame.transpose().copy()
     o2['GeneID']=np.vectorize(lambda s : s.split('_')[0])(o2.index)
     o2['etype']=np.vectorize(lambda s : s.split('_')[1])(o2.index)
+    o2=o2.query('GeneID in @valid_gene_ids')
     o2=o2.set_index(['etype','GeneID'])
-    subomics={ etype : o2.xs(etype,level=0) for etype in ETYPES}
+
+    etypes_this_omics_unsrt=set(o2.index.get_level_values(0))& set(ETYPES)
+    etypes_this_omics=[ etype for etype in ETYPES if etype in etypes_this_omics_unsrt ]
+
+    if 'delta' in etypes_this_omics : 
+
+        cmbi.boot_gff()
+        minigff=cmbi._gff.assign(locus=cmbi._gff.start+cmbi._gff.stop/2)[['GeneID','locus','chromosome']]
+        delta_gene_ids=o2.loc['delta'].index
+        minigff=minigff.query('GeneID in @valid_gene_ids').sort_values(['chromosome','locus']).set_index("GeneID").reindex(valid_gene_ids)
+        deltafix=minigff.join(o2.loc['delta'],how='left').reset_index().set_index(['GeneID','chromosome','locus']).astype(float)
+        #deltafix=minigff.join(o2.loc['delta'],how='inner').reset_index().set_index(['GeneID','chromosome','locus']).astype(float)
+        deltafix=deltafix.interpolate()
+
+        subomics=dict()
+        subomics['mut']=o2.xs('mut',level=0)
+        subomics['fus']=o2.xs('fus',level=0)
+        subomics['up']=(deltafix > delta_normal_maximum).droplevel([1,2],axis=0)
+        subomics['dn']=(deltafix < delta_normal_minimum).droplevel([1,2],axis=0)
+        
+    else : 
+        subomics={ etype : o2.xs(etype,level=0) for etype in etypes_this_omics}
 
     if coerce_ids : 
         master_gene_index=valid_gene_ids
@@ -259,7 +283,7 @@ def omics_to_nonzeros(omics_frame,valid_gene_ids,coerce_ids=False):
             reduce(np.union1d,[ v.index for v in subomics.values()]),
             valid_gene_ids)
 
-    subomics={ etype :  subomics[etype].reindex(master_gene_index).fillna(0.0) for etype in ETYPES }
+    subomics={ etype :  subomics[etype].reindex(master_gene_index).astype(float).fillna(0.0) for etype in subomics }
     nzomics={ etype : subomics[etype].values.nonzero() for etype in subomics }
 
     return master_gene_index,nzomics,subomics
@@ -373,6 +397,7 @@ def eightpeetwenty() :
                                     ].GeneID.unique(),master_gene_index)
 
 def create_sparse_omics(nzomics,osize) : 
+
     tindices=np.concatenate([
         np.stack([
             np.ones((len(nzomics[etype][0]),),dtype=int)*x,
@@ -380,7 +405,7 @@ def create_sparse_omics(nzomics,osize) :
                  ],
                  axis=-1
                 )
-    for x,etype in enumerate(ETYPES)
+    for x,etype in enumerate(ETYPES) if etype in nzomics.keys()
     ],axis=0).transpose()
 
     sparse_omics=torch.sparse_coo_tensor(indices=tindices,
@@ -663,7 +688,15 @@ if __name__ == '__main__' :
     omics,signatures=align_pandas(omics,signatures,how='intersect')
     cmu.msg('Done.')
     cmu.msg('Reformatting omics...')
-    master_gene_index,nzomics,subomics=omics_to_nonzeros(omics,valid_gene_ids)
+    master_gene_index,nzomics,subomics=omics_to_nonzeros(omics,valid_gene_ids,
+        delta_normal_maximum=settings.delta_normal_maximum,
+        delta_normal_minimum=settings.delta_normal_minimum,
+        )
+
+    
+    print(len(master_gene_index) ,len(valid_gene_ids))
+    assert len(master_gene_index) <= len(valid_gene_ids)
+
     cmu.msg('Done.')
     cmu.msg('Getting lengths and timings...')
     lengths,timings=read_length_timing(settings,master_gene_index)
@@ -682,8 +715,15 @@ if __name__ == '__main__' :
         force_zero_indices=None
 
 
-    cmu.msg('Creating J...')
-    J,gb_index=create_J_and_gbindex(sparse_omics,signatures,lengths,timings,master_gene_index=master_gene_index,add_eightpeetwenty=False,force_zero_indices=force_zero_indices)
+    cmu.msg('Creating signature tensor...')
+    J,gb_index=create_J_and_gbindex(sparse_omics,
+                                    signatures,
+                                    lengths,
+                                    timings,
+                                    master_gene_index=master_gene_index,
+                                    add_eightpeetwenty=False,
+                                    force_zero_indices=force_zero_indices,
+                                    )
     cmu.msg('Done.')
 
     cmu.msg('Creating synteny broadcast...')

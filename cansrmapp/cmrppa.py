@@ -38,7 +38,7 @@ if __name__ == '__main__' :
                   help='omics.csv',
                   action='store',
                   required=True)
-     
+
 
     feature_source_group=parser_build.add_mutually_exclusive_group(
             required=True)
@@ -102,12 +102,21 @@ if __name__ == '__main__' :
     
     ns=vars(parser.parse_args())
 
-def read_omics(opath) : 
+def read_omics(opath,delta_normal_maximum=3.999,delta_normal_minimum=-1.0) : 
     #omics=pd.read_csv('/cellar/users/mrkelly/Data/largesse_paper/cohort_rules/LUAD_gdc_manual_240208/omics_240228.csv',index_col=0)
     omics=pd.read_csv(opath,index_col=0)
     omics.index.name='Tumor_Sample_Barcode'
 
-    return omics
+    deltacols=[ c for c in omics.columns if c.endswith('_delta') ]
+
+    nuomics=omics.drop(deltacols,axis=1).copy()
+    
+    ups=(omics[deltacols]>delta_normal_maximum).rename(columns=lambda c : c[:-6]+'_up').astype(int)
+    dns=(omics[deltacols]<delta_normal_minimum).rename(columns=lambda c : c[:-6]+'_dn').astype(int)
+
+    nuomics=nuomics.join(ups).join(dns)
+
+    return nuomics
 
 def read_rppa(rppath,rescale=True) : 
     rppa=pd.read_csv(rppath).set_index('Tumor_Sample_Barcode').drop(columns='Unnamed: 0')
@@ -205,7 +214,9 @@ def feature_table_by_cmrun(**kwargs) :
                         for e in range(len(nz0)) 
                     ]
 
-    ot=omics.transpose().loc[selection_events]
+    ot=omics.filter(selection_events).transpose()
+    #ot=omics.transpose().filter(selection_events)
+    #ot=omics.transpose().loc[selection_events]
     ot['gene']=np.vectorize(lambda s : s.split('_')[0] )(ot.index)
     otm=ot.groupby('gene').max()
     oframe=otm.transpose() #This is a gene-wise omics table with all genes
