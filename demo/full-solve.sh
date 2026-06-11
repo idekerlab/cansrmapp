@@ -2,6 +2,7 @@
 
 if [ -a model ]
 then
+    print("cleaned up old model with identical name.")
     rm -rf model
 fi
 
