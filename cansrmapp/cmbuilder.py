@@ -122,7 +122,7 @@ def read_omics(a) :
         reads from the file path at a.omics_path
     """
     if type(a) == str :
-        return pd.read_csv(a,index_col=0)
+        return pd.read_csv(a,index_col=0,low_memory=False)
     if type(a) == BuilderSettings :
         return pd.read_csv(a.omics_path,index_col=0,low_memory=False)
     raise ValueError("a should be either a string(=file path) or a BuilderSettings object")
@@ -479,8 +479,13 @@ def load_sm(a,master_gene_index) :
     else : 
         raise ValueError("a should be either a string(=file path) or a BuilderSettings object")
 
-    with open(sm_path,'rb') as f: 
-        nh0=pickle.load(f)
+    if sm_path.split('.')[-1] == 'pickel' : 
+        with open(sm_path,'rb') as f: 
+            nh0=pickle.load(f)
+    else :
+        import json
+        with open(sm_path,'r') as f : 
+            nh0=json.load(f)
 
     nh1=dict()
     sys_index=list()
