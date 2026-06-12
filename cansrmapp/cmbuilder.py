@@ -479,7 +479,7 @@ def load_sm(a,master_gene_index) :
     else : 
         raise ValueError("a should be either a string(=file path) or a BuilderSettings object")
 
-    if sm_path.split('.')[-1] == 'pickel' : 
+    if sm_path.split('.')[-1] == 'pickle' : 
         with open(sm_path,'rb') as f: 
             nh0=pickle.load(f)
     else :
