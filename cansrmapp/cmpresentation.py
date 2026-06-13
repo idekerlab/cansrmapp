@@ -477,7 +477,7 @@ class CMAnalyzer(object) :
         else : 
             return torch.matmul(I,iweights)+torch.matmul(H,hweights)
 
-    def selectionless_likelihood(self,**kwargs) : 
+    def selectionless_logodds(self,**kwargs) : 
         output_log_odds=kwargs.get('output_log_odds',self.output_log_odds)
         if not any([ k in kwargs for k in ('I','H','iweights','hweights')]) : 
             partitioned_sp=self.partitioned_sp
@@ -485,7 +485,56 @@ class CMAnalyzer(object) :
             selection_pressures=self.get_selection_pressures(**kwargs)
             partitioned_sp=self.partition*selection_pressures
 
-        return self.likelihood(output_log_odds-partitioned_sp.ravel())
+        return output_log_odds-partitioned_sp.ravel()
+
+    def selectionless_likelihood(self,**kwargs) : 
+
+        return self.likelihood(self.selectionless_logodds(**kwargs))
+
+   #def underselection_empirical(self,cutoff=0.05,numeric=False,nsamples=300,random_state=1337,**kwargs) : 
+
+
+   #    from scipy.stats import binom
+   #    from numpy.random import Generator,MT19937
+
+   #    gen=Generator(MT19937(random_state))
+
+   #    full_prob=torch.special.expit(self.output_log_odds).numpy()
+   #    ablated_prob=torch.special.expit(self.selectionless_logodds()).numpy()
+
+   #    full_gen=binom.rvs(int(self.n),p=full_prob,size=(nsamples,len(full_prob)),random_state=gen)
+   #    ablated_gen=binom.rvs(int(self.n),p=ablated_prob,size=(nsamples,len(ablated_prob)),random_state=gen)
+
+   #    full_ll=binom.logpmf(full_gen,self.n,full_prob)
+   #    ablated_ll=binom.logpmf(ablated_gen,self.n,ablated_prob)
+
+
+   #    llr=full_ll-ablated_ll
+   #    sigat=np.quantile(llr,1-cutoff,axis=0)
+   #    dfsigat=pd.DataFrame(
+   #        data=sigat.reshape((4,sigat.shape[0]//4)).transpose(),
+   #        index=self.gene_index,
+   #        columns=['mut','fus','up','dn'],
+   #    )
+
+   #    us=self.underselection(numeric=True)
+
+   #    if numeric : 
+
+   #        pvals=(self.likelihood().numpy() >  llr).mean(axis=0)
+   #        return pd.DataFrame(
+   #                index=us.index,
+   #                columns=us.columns,
+   #                data=pvals.reshape((4,pvals.shape[0]//4)).transpose()
+   #                )
+
+   #    else : 
+   #        issig=(us > dfsigat)
+   #        return issig
+
+        
+
+
 
     def underselection(self,cutoff=np.log(2),numeric=False,**kwargs) :
         output_log_odds=kwargs.get('output_log_odds',self.output_log_odds)
