@@ -491,49 +491,49 @@ class CMAnalyzer(object) :
 
         return self.likelihood(self.selectionless_logodds(**kwargs))
 
-   #def underselection_empirical(self,cutoff=0.05,numeric=False,nsamples=300,random_state=1337,**kwargs) : 
+    def underselection_empirical(self,cutoff=0.05,numeric=False,**kwargs) : 
+        from torch.distributions.binomial import Binomial
 
+        selectionless_logodds=self.selectionless_logodds()
+        if len(kwargs) > 0 : 
+            full_logodds=self.forward(**kwargs)
+        else : 
+            full_logodds=self.output_log_odds
 
-   #    from scipy.stats import binom
-   #    from numpy.random import Generator,MT19937
+        tocalculate=torch.argwhere( selectionless_logodds != full_logodds ).ravel()
+        b_nosel=Binomial(logits=selectionless_logodds[tocalculate],total_count=self.n)
+        b_full=Binomial(logits=full_logodds[tocalculate],total_count=self.n)
 
-   #    gen=Generator(MT19937(random_state))
+        kays=torch.arange(0,499).reshape(-1,1)
+        null_lls=b_nosel.log_prob(kays) # sampling weights
+        full_lls=b_full.log_prob(kays)
+        llrs=full_lls - null_lls
 
-   #    full_prob=torch.special.expit(self.output_log_odds).numpy()
-   #    ablated_prob=torch.special.expit(self.selectionless_logodds()).numpy()
+        usn=self.underselection(numeric=True)
+        usr=torch.tensor(usn.transpose().values.ravel()).cpu()[tocalculate].reshape(1,-1)
 
-   #    full_gen=binom.rvs(int(self.n),p=full_prob,size=(nsamples,len(full_prob)),random_state=gen)
-   #    ablated_gen=binom.rvs(int(self.n),p=ablated_prob,size=(nsamples,len(ablated_prob)),random_state=gen)
+        tosum=torch.exp(null_lls)
+        tosum[ (full_lls - null_lls) < usr ]=0
+        pees=tosum.sum(axis=0)
 
-   #    full_ll=binom.logpmf(full_gen,self.n,full_prob)
-   #    ablated_ll=binom.logpmf(ablated_gen,self.n,ablated_prob)
+        from statsmodels.stats.multitest import multipletests
+        fdr=multipletests(pees.numpy(),method='fdr_bh')[1]
 
+        fdrdata=np.ones((len(self.y),))
+        fdrdata[ tocalculate.numpy() ]=fdr
 
-   #    llr=full_ll-ablated_ll
-   #    sigat=np.quantile(llr,1-cutoff,axis=0)
-   #    dfsigat=pd.DataFrame(
-   #        data=sigat.reshape((4,sigat.shape[0]//4)).transpose(),
-   #        index=self.gene_index,
-   #        columns=['mut','fus','up','dn'],
-   #    )
+        pframe=pd.DataFrame(
+                    index=self.gene_index,
+                    columns=ETYPES,
+                    data=fdrdata.reshape((4,fdrdata.shape[0]//4)).transpose()
+                    )
 
-   #    us=self.underselection(numeric=True)
+        if numeric : 
 
-   #    if numeric : 
+            return pframe
 
-   #        pvals=(self.likelihood().numpy() >  llr).mean(axis=0)
-   #        return pd.DataFrame(
-   #                index=us.index,
-   #                columns=us.columns,
-   #                data=pvals.reshape((4,pvals.shape[0]//4)).transpose()
-   #                )
-
-   #    else : 
-   #        issig=(us > dfsigat)
-   #        return issig
-
-        
-
+        else : 
+            return pframe < cutoff
 
 
     def underselection(self,cutoff=np.log(2),numeric=False,**kwargs) :
