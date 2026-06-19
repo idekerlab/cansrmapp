@@ -207,7 +207,10 @@ def feature_table_by_cmrun(**kwargs) :
                        arrays=arrays,
                        best_params=bp)
 
-    dfus=cma.underselection(cutoff=np.log(4))
+    from scipy.stats.distributions import chi2
+    dfus=cma.underselection_empirical(cutoff=3e-1) # 260616
+    #dfus=cma.underselection_empirical(cutoff=5e-2) #260613
+    #dfus=cma.underselection(cutoff=np.log(4))
     nz0,nz1=dfus.values.nonzero()
     selection_events=[
                         '_'.join([arrays['gene_index'][nz0[e]],cmp.ETYPES[nz1[e]]])
@@ -242,7 +245,9 @@ def feature_table_by_cmrun(**kwargs) :
         worthy_j_indices=slcj.map_estimate.gt(0.0)
 
     hnpd=H.to_dense().numpy()[row_indices_of_oframe_genes][:,worthy_h_indices]
-    rppai=oframe[cma.gene_index[worthy_i_indices]].copy()
+    #rppai=oframe[cma.gene_index[worthy_i_indices]].copy()
+    rppai=oframe[ np.intersect1d(oframe.columns,cma.gene_index[worthy_i_indices]) ].copy()
+
     rppah=(oframe.dot(hnpd) > 0)
     rppah.columns=cma.sys_index[worthy_h_indices]
     rppaj=signatures[np.intersect1d(cma.gb_index[worthy_j_indices],signatures.columns)]
