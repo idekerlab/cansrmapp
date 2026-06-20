@@ -38,6 +38,11 @@ class palette() :
             self.__setattr__(k,kwargs[k])
     def __repr__(self) : 
             return '\n'.join(['{}={}'.format(k,getattr(self,k)) for k in self.colornames])
+    def __len__(self) : 
+        return len(self.colornames)
+    def __iter__(self) :
+        for k in self.colornames :
+            yield getattr(self,k)
 
 routes=palette(      
 techne          =       '#D51D30',

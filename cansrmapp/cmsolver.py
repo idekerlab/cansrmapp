@@ -11,6 +11,7 @@ if __name__ == '__main__'  :
     parser.add_argument('--npats',action='store',default=498.0)
     parser.add_argument('--n_cycles',action='store',default=30)
     parser.add_argument('--n_chains',action='store',default=10)
+    parser.add_argument('--log_burnin',action='store_true')
     ns=parser.parse_args()
 
 
@@ -472,6 +473,7 @@ class Slooper(object) :
             checkevery=50,
             converge_on_n=5,
             dumpfilename=None,
+            log_burnin=False
             ) :
 
         super(Slooper,self).__init__()
@@ -481,6 +483,7 @@ class Slooper(object) :
         self.best_params=None
         self.best_datum=None
         self.converge_on_n=converge_on_n
+        self.log_burnin=log_burnin
         if self.converge_on_n > 0 : 
             self.clear_lastn()
 
@@ -512,7 +515,7 @@ class Slooper(object) :
             self.epoch_counter += 1
             datum=None
 
-            if (epoch > burnin) : 
+            if (epoch > burnin) or self.log_burnin : 
                 thissnap=self.solver.snap()
                 thispos=thissnap[_POSTERIOR]
 
@@ -692,7 +695,7 @@ if __name__ == '__main__' :
 
     sgrids=_instantiate_sgrids(solver.model,memory_size=int(ns.n_chains)*int(ns.n_cycles))
 
-    sloopers=[ Slooper(solver,checkevery=200,converge_on_n=0) for x in range(int(ns.n_chains)) ]
+    sloopers=[ Slooper(solver,checkevery=200,converge_on_n=0,log_burnin=ns.log_burnin) for x in range(int(ns.n_chains)) ]
 
     #last_bds=torch.zeros((int(ns.n_chains),)).to(DEVICE).float()
     last_bds=[dict()]*int(ns.n_chains)
