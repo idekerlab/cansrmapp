@@ -509,7 +509,7 @@ class CMAnalyzer(object) :
         b_nosel=Binomial(logits=selectionless_logodds[tocalculate],total_count=self.n)
         b_full=Binomial(logits=full_logodds[tocalculate],total_count=self.n)
 
-        kays=torch.arange(0,499).reshape(-1,1)
+        kays=torch.arange(0,self.n+1).reshape(-1,1)
         null_lls=b_nosel.log_prob(kays) # sampling weights
         full_lls=b_full.log_prob(kays)
         llrs=full_lls - null_lls
