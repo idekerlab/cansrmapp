@@ -112,3 +112,8 @@ ENV/
 demo/nest
 demo/model
 demo/summary
+cansrmapp.egg-info/
+cansrmap/__pycache__/
+dist
+.readthedocs.yaml
+.travis.yml
