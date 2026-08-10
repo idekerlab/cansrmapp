@@ -22,6 +22,7 @@ testonly=np.setdiff1d(intest,incanon)
 canononly=np.setdiff1d(incanon,intest)
 both=np.intersect1d(incanon,intest)
 
+
 print('{: ^19}|{: ^20}|{: ^19}'.format('only','common','only'))
 print('{: ^19}|{: ^20}|{: ^19}'.format(len(testonly),len(both),len(canononly)))
 
@@ -40,8 +41,8 @@ def omics_syncer(omics_fp,valid_gene_ids) :
     return master_gene_index,ofreq.to_dense().numpy().ravel()
 
 canon_genes=df_canon[ df_canon.feattype.eq('gene') ].index
-tcga_genes,tcga_freq=omics_syncer('../data/omics_tcga_luad.csv.gz',canon_genes)
-cptac_genes,cptac_freq=omics_syncer('../data/omics_cptac_luad.csv.gz',canon_genes)
+tcga_genes,tcga_freq=omics_syncer('../data/tcga_luad/omics_full.csv.gz',canon_genes.values)
+cptac_genes,cptac_freq=omics_syncer('../data/omics_cptac_luad.csv.gz',canon_genes.values)
 pred_freq=torch.load('summary/model_pred_frequencies.pt',weights_only=True)
 
 cptac_gene_indices=np.argwhere(canon_genes.isin(cptac_genes))

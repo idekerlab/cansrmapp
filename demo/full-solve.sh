@@ -1,15 +1,15 @@
 #!/bin/bash
 
-if [ -a model ]
+if [[ -a model ]]
 then
-    print("cleaned up old model with identical name.")
+    echo "cleaned up old model with identical name." 
     rm -rf model
 fi
 
 python3 ../cansrmapp/cmsolver.py \
---lambda_selection 3.0  \
+--lambda_selection 2.75  \
 --lambda_gb 1.0 \
---alpha_partition 2.25 \
+--alpha_partition 2.5 \
 --indir nest \
 --outdir model \
 --n_cycles 5 \

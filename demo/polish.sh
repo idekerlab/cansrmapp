@@ -16,7 +16,7 @@ fsf.to_csv("${OUTDIR}/feature_summary.csv")
 torch.save(torch.special.expit(cma.output_log_odds),
            "${OUTDIR}/model_pred_frequencies.pt")
 
-dfus=cma.underselection(cutoff=np.log(4))
+dfus=cma.underselection_empirical(cutoff=0.05)
 dfus.index.name='Gene'
 dfus.columns.name='Alteration Type'
 dfus.to_csv("${OUTDIR}/selected_events_boolean.csv")
