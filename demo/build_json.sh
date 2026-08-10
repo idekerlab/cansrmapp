@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 ../cansrmapp/cmbuilder.py --json nest_orig_2296.json
+python3 ../cansrmapp/cmbuilder.py --json nest_luad.json

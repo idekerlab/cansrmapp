@@ -2,7 +2,7 @@
 python3 ../cansrmapp/cmbuilder.py \
 --omics_path ../data/tcga_luad/omics_full.csv.gz \
 --signature_path ../data/tcga_luad/signatures.csv.gz \
---sm_path ../systems_maps/nest.pickle \
+--sm_path ../module_maps/nest.pickle \
 --blacklist_path ../data/lowly_expressed_blacklist.pickle \
 --length_timing_path ../data/length_and_timing.hdf \
 --output_path nest \
