@@ -130,7 +130,7 @@ Output for the **final** command should resemble :
               Local run           |         Publication          
     -------------------------------------------------------------
            only        |       common       |       only        
-             0         |         90         |         0         
+             0         |         122        |         0         
 
     ============================================================
     Detected GPU.
@@ -139,7 +139,7 @@ Output for the **final** command should resemble :
     TCGA-CPTAC [evaluation] frequency agreement (pearson) :
     PearsonRResult(statistic=0.89953285, pvalue=0.0)
 
-Indicating that the 90 CanSRMaPP features are those recovered by the authors,
+Indicating that the 122 CanSRMaPP features are those recovered by the authors,
 and that their deviation from the authors' values is less than one part in
 10\ :sup:`5`. 
 
@@ -171,9 +171,9 @@ controlled access, it cannot be redistributed here in its original form.
 Binarized alteration states and signature activities, which constitute
 a de-identified data derivative under the NIH universal Data Use Certification,
 are hosted here and on `zenodo`. Gene level alteration states for the
-TCGA LUAD cohort are located in ``data/omics_tcga_luad.csv.gz``;
+TCGA LUAD cohort are located in ``data/tcga_[cohort]/omics_full.csv.gz``;
 for the CPTAC LUAD cohort, ``data/omics_cptac_luad.csv.gz``.
-Signature activities for the TCGA LUAD cohort are in ``data/signatures_tcga_luad.csv.gz``.
+Signature activities for the TCGA LUAD cohort are in ``data/tcga_[cohort]/signatures.csv.gz``.
 
 .. _zenodo: https://doi.org/10.5281/zenodo.17995310.
 .. _Genomic Data Commons: https://gdc.cancer.gov/ 
@@ -202,14 +202,46 @@ NeSTv0
 ------
 
 "NeSTv0" is a precursor of the interaction map found in
-`Zheng, Kelly, et al., 2021`_, prior to filtering for mutation-enriched systems.
+`Zheng, Kelly, et al., 2021`_, prior to filtering for mutation-enriched modules.
 It is distributed here as ``nest.pickle`` with permission from the authors, and is
 subject to the license governing this repository. The file contains a `dict` object
-mapping each system to a `set` of member gene Entrez IDs. Because systems in this
+mapping each module to a `set` of member gene Entrez IDs. Because module in this
 file are named ``Clusterx-y``, an additional file, ``NeST_map_1.5_default_node_Nov20.csv``,
 is incorporated to map these to their NEST IDs as published.
 
 .. _Zheng, Kelly, et al., 2021: https://doi.org/10.1126/science.abf3067
+
+reactome
+--------
+
+`NCBI2Reactome_All_Levels.txt` was downloaded from https://reactome.org/download/current/
+on November 3, 2024, and refactored into the file `module_maps/reactome.pickle`
+
+Gene Ontology (GO)
+------------------
+
+The OBO file `go_basic.obo` was downloaded on September 28, 2024 from 
+https://geneontology.org/docs/download-ontology/go_basic.obo, distributed
+under CC-BY 4.0. The file `gene2go_human` is a modified version of a file 
+downloaded March 12, 2024 from https://ftp.ncbi.nlm.nih.gov/gene/DATA/, 
+with annotations from nonhuman taxa removed; no restrictions have been placed 
+by NCBI on these files' use. They were in turn used to generate 
+`module_maps/go_bpcc.pickle`, which omits the "molecular function" namespace.
+**NOTE** that the given link is updated **DAILY**, and discrepancies between
+this file and the one at the link are 
+extremely likely.
+
+CORUM
+-----
+
+During development, Helmholtz-Munich was hit by a cyberattack and CORUM could 
+not longer be hosted digitally.  Source data for the included file
+`module_maps/corum.pickle` was graciously communicated by Andreas Ruepp.
+This release is described in `Tsitsiridis et al, 2022`_ , 
+and is distributed under CC-BY-SA 4.0.
+
+.. _Tsitsiridis et al, 2022: https://doi.org/10.1093/nar/gkac1015, 
+
 
 Credits
 -------
@@ -219,85 +251,3 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
 
-
-..      Run **make** command with no arguments to see other build/deploy options including creation of Docker image
-
-..      .. code-block::
-
-..         make
-
-..      Output:
-
-..      .. code-block::
-
-..         clean                remove all build, test, coverage and Python artifacts
-..         clean-build          remove build artifacts
-..         clean-pyc            remove Python file artifacts
-..         clean-test           remove test and coverage artifacts
-..         lint                 check style with flake8
-..         test                 run tests quickly with the default Python
-..         test-all             run tests on every Python version with tox
-..         coverage             check code coverage quickly with the default Python
-..         docs                 generate Sphinx HTML documentation, including API docs
-..         servedocs            compile the docs watching for changes
-..         testrelease          package and upload a TEST release
-..         release              package and upload a release
-..         dist                 builds source and wheel package
-..         install              install the package to the active Python's site-packages
-..         dockerbuild          build docker image and store in local repository
-..         dockerpush           push image to dockerhub
-
-
-..      For developers
-..      -------------------------------------------
-
-..      To deploy development versions of this package
-..      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-..      Below are steps to make changes to this code base, deploy, and then run
-..      against those changes.
-
-..      #. Make changes
-
-..         Modify code in this repo as desired
-
-..      #. Build and deploy
-
-..      .. code-block::
-
-..          # From base directory of this repo cansrmapp
-..          pip uninstall cansrmapp -y ; make clean dist; pip install dist/cansrmapp*whl
-
-
-
-..      Needed files
-..      ------------
-
-..      **TODO:** Add description of needed files
-
-
-..      Usage
-..      -----
-
-..      For information invoke :code:`cansrmappcmd.py -h`
-
-..      **Example usage**
-
-..      **TODO:** Add information about example usage
-
-..      .. code-block::
-
-..         cansrmappcmd.py # TODO Add other needed arguments here
-
-
-..      Via Docker
-..      ~~~~~~~~~~~~~~~~~~~~~~
-
-..      **Example usage**
-
-..      **TODO:** Add information about example usage
-
-
-..      .. code-block::
-
-..         Coming soon ...
