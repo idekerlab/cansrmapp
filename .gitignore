@@ -107,3 +107,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# demo run
+demo/nest
+demo/model
+demo/summary
